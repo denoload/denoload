@@ -1,18 +1,16 @@
 {
-	"compilerOptions": {
-		"allowJs": false,
-		"strict": true
-	},
-	"lint": {
-		"rules": {
-			"tags": [
-				"recommended"
-			]
-		}
-	},
-	"imports": {
-		"std/": "https://deno.land/std@0.202.0/",
-		"bluebird": "npm:bluebird",
-		"@types/bluebird": "npm:@types/bluebird"
-	}
+  "compilerOptions": {
+    "allowJs": false,
+    "strict": true
+  },
+  "lint": {
+    "rules": {
+      "tags": [
+        "recommended"
+      ]
+    }
+  },
+  "imports": {
+    "std/": "https://deno.land/std@0.202.0/",
+  }
 }
