@@ -2,6 +2,8 @@ import * as log from "std/log/mod.ts";
 
 export default log;
 
+const level: log.LevelName = "INFO";
+
 log.setup({
   handlers: {
     console: new log.handlers.ConsoleHandler("DEBUG", {
@@ -12,12 +14,12 @@ log.setup({
   loggers: {
     // Main thread.
     "k7/main": {
-      level: "DEBUG",
+      level,
       handlers: ["console"],
     },
     // Worker thread that execute Virtual User.
     "k7/worker": {
-      level: "DEBUG",
+      level,
       handlers: ["console"],
     },
   },
