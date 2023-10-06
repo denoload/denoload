@@ -2,7 +2,7 @@ import log from "./log.ts";
 import { numCpus } from "./num_cpus.ts";
 import { RpcOptions, RpcWorker } from "./rpc.ts";
 
-const logger = log.getLogger("k7/main");
+const logger = log.getLogger("main");
 
 export interface WorkerPoolOptions {
   minWorker: number;
@@ -43,13 +43,7 @@ export class WorkerPool {
 
     // Find a worker.
     if (this.workers.length < this.options.minWorker) {
-      logger.info("spawning a new worker");
-      worker = new RpcWorker(new URL("./worker_script.ts", import.meta.url), {
-        type: "module",
-      });
-
-      workerIndex = this.workers.push(worker) - 1;
-      this.runningTasks.push(new Set());
+      [worker, workerIndex] = await this.createWorker();
     } else {
       let workerIndexWithLessTask = -1;
       let workerMinTask = Number.MAX_SAFE_INTEGER;
@@ -63,15 +57,7 @@ export class WorkerPool {
       // All workers are full
       if (workerMinTask >= this.options.maxTasksPerWorker) {
         if (this.workers.length < this.options.maxWorker) {
-          logger.info("spawning a new worker");
-          worker = new RpcWorker(
-            new URL("./worker_script.ts", import.meta.url),
-            {
-              type: "module",
-            },
-          );
-
-          workerIndex = this.workers.push(worker) - 1;
+          [worker, workerIndex] = await this.createWorker();
           this.runningTasks.push(new Set());
         } else {
           // Wait for a new worker to be free.
@@ -110,9 +96,26 @@ export class WorkerPool {
     }
 
     for (const w of this.workers) {
-      console.log("terminating...");
       w.terminate();
-      console.log("terminated");
     }
+  }
+
+  private async createWorker(): Promise<[RpcWorker, number]> {
+    logger.info("spawning a new worker");
+    const worker = new RpcWorker(
+      new URL("./worker_script.ts", import.meta.url),
+      {
+        type: "module",
+      },
+    );
+    const index = this.workers.push(worker) - 1;
+    this.runningTasks.push(new Set());
+
+    await worker.remoteProcedureCall({
+      name: "setupWorker",
+      args: [index],
+    });
+
+    return [worker, index];
   }
 }

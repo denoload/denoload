@@ -2,7 +2,7 @@ import { ExecutorKind, ScenarioOptions } from "./datatypes.ts";
 import log from "./log.ts";
 import { WorkerPool } from "./worker_pool.ts";
 
-const logger = log.getLogger("k7/main");
+const logger = log.getLogger("main");
 
 /**
  * Executor are responsible for coordinating and managing the entire life cycle

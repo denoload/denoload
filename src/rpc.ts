@@ -22,7 +22,7 @@ const defaultRpcOptions: RpcOptions = {
   transfer: [],
 };
 
-const logger = log.getLogger("k7/main");
+const logger = log.getLogger("main");
 let globalMsgId = 0;
 
 // deno-lint-ignore no-explicit-any
@@ -107,7 +107,7 @@ export function workerProcedureHandler(
   postMessage: (_: RpcResult<any>) => void,
   // deno-lint-ignore no-explicit-any
 ): (_: MessageEvent<RPC<any>>) => void {
-  const logger = log.getLogger("k7/worker");
+  const logger = log.getLogger("worker");
 
   // deno-lint-ignore no-explicit-any
   return async (event: MessageEvent<RPC<any>>): Promise<void> => {
