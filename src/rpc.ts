@@ -25,51 +25,79 @@ const defaultRpcOptions: RpcOptions = {
 const logger = log.getLogger("k7/main");
 let globalMsgId = 0;
 
-export function remoteProcedureCall<A, R>(
-  worker: Worker,
-  rpc: { name: string; args: A[] },
-  options: Partial<RpcOptions> = {},
-): Promise<R | undefined> {
-  const { timeout, transfer } = {
-    ...options,
-    ...defaultRpcOptions,
-  };
+// deno-lint-ignore no-explicit-any
+type ResponseHandler = (_: RpcResult<any>) => void;
 
-  const msgId = globalMsgId++;
+export class RpcWorker {
+  private readonly worker: Worker;
+  private readonly responseHandlers: Map<number, ResponseHandler> = new Map();
 
-  return new Promise((resolve, reject) => {
-    const timeoutId = setTimeout(() => {
-      reject(`rpc ${msgId} timed out`);
-    }, timeout);
+  constructor(specifier: string | URL, options?: WorkerOptions | undefined) {
+    this.worker = new Worker(specifier, options);
+    this.worker.onmessage = this.onResponse.bind(this);
+  }
 
-    // Response listener
-    // deno-lint-ignore prefer-const
-    let listener: (_: MessageEvent<RpcResult<R>>) => void;
-    listener = (event: MessageEvent<RpcResult<R>>) => {
-      // Message is a response to our RPC.
-      if (event.data.id !== msgId) {
-        return;
-      }
+  terminate() {
+    this.worker.terminate();
+  }
 
-      // Clear timeout and event listener..
-      clearTimeout(timeoutId);
-      worker.removeEventListener("message", listener);
+  private onResponse<R>(event: MessageEvent<RpcResult<R>>) {
+    const responseId = event.data.id;
+    const responseHandler = this.responseHandlers.get(responseId);
 
-      logger.debug(
-        `rpc ${event.data.id} returned ${JSON.stringify(event.data)}`,
+    if (!responseHandler) {
+      throw new Error(
+        `received unexpected response for rpc ${responseId}, no handler registered`,
       );
+    }
 
-      if (event.data.error) {
-        reject(event.data.error);
-      }
+    responseHandler(event.data);
+  }
 
-      resolve(event.data.result);
+  remoteProcedureCall<A, R>(
+    rpc: { name: string; args: A[] },
+    options: Partial<RpcOptions> = {},
+  ): Promise<R | undefined> {
+    const { timeout, transfer } = {
+      ...options,
+      ...defaultRpcOptions,
     };
-    worker.addEventListener("message", listener);
 
-    logger.debug(`rpc ${msgId} called ${JSON.stringify(rpc)}`);
-    worker.postMessage({ id: msgId, ...rpc }, transfer);
-  });
+    const msgId = globalMsgId++;
+
+    return new Promise((resolve, reject) => {
+      const timeoutId = setTimeout(() => {
+        reject(`rpc ${msgId} timed out`);
+      }, timeout);
+
+      this.addResponseHandler(msgId, (data: RpcResult<R>) => {
+        // Clear timeout and response handler.
+        clearTimeout(timeoutId);
+        this.removeResponseHandler(msgId);
+
+        logger.debug(
+          `rpc ${data.id} returned ${JSON.stringify(data)}`,
+        );
+
+        if (data.error) {
+          reject(data.error);
+        }
+
+        resolve(data.result);
+      });
+
+      logger.debug(`rpc ${msgId} called ${JSON.stringify(rpc)}`);
+      this.worker.postMessage({ id: msgId, ...rpc }, transfer);
+    });
+  }
+
+  private addResponseHandler(id: number, handler: ResponseHandler) {
+    this.responseHandlers.set(id, handler);
+  }
+
+  private removeResponseHandler(id: number) {
+    this.responseHandlers.delete(id);
+  }
 }
 
 export function workerProcedureHandler(

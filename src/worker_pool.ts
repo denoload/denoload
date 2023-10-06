@@ -1,5 +1,5 @@
 import log from "./log.ts";
-import { remoteProcedureCall, RpcOptions } from "./rpc.ts";
+import { RpcOptions, RpcWorker } from "./rpc.ts";
 
 const logger = log.getLogger("k7/main");
 
@@ -11,17 +11,18 @@ export interface WorkerPoolOptions {
 
 const defaultWorkPoolOptions: WorkerPoolOptions = {
   minWorker: 4,
-  maxWorker: 8,
-  maxTasksPerWorker: 100,
+  maxWorker: 6,
+  maxTasksPerWorker: 128,
 };
 
 export class WorkerPool {
-  private workers: Worker[] = [];
+  private workers: RpcWorker[] = [];
   // deno-lint-ignore no-explicit-any
   private runningTasks: Set<Promise<any>>[] = [];
-  // deno-lint-ignore no-explicit-any
-  private taskQueue: Array<[(_: [Worker, number]) => void, (_: any) => void]> =
-    [];
+  private taskQueue: Array<
+    // deno-lint-ignore no-explicit-any
+    [(_: [RpcWorker, number]) => void, (_: any) => void]
+  > = [];
 
   private readonly options: WorkerPoolOptions;
 
@@ -41,7 +42,8 @@ export class WorkerPool {
 
     // Find a worker.
     if (this.workers.length < this.options.minWorker) {
-      worker = new Worker(new URL("./worker.ts", import.meta.url), {
+      logger.info("spawning a new worker");
+      worker = new RpcWorker(new URL("./worker_script.ts", import.meta.url), {
         type: "module",
       });
 
@@ -59,11 +61,24 @@ export class WorkerPool {
 
       // All workers are full
       if (workerMinTask >= this.options.maxTasksPerWorker) {
-        // Wait for a new worker to be free.
-        logger.debug("worker pool exhausted, waiting for a task to complete");
-        [worker, workerIndex] = await new Promise((resolve, reject) => {
-          this.taskQueue.push([resolve, reject]);
-        });
+        if (this.workers.length < this.options.maxWorker) {
+          logger.info("spawning a new worker");
+          worker = new RpcWorker(
+            new URL("./worker_script.ts", import.meta.url),
+            {
+              type: "module",
+            },
+          );
+
+          workerIndex = this.workers.push(worker) - 1;
+          this.runningTasks.push(new Set());
+        } else {
+          // Wait for a new worker to be free.
+          logger.debug("worker pool exhausted, waiting for a task to complete");
+          [worker, workerIndex] = await new Promise((resolve, reject) => {
+            this.taskQueue.push([resolve, reject]);
+          });
+        }
       } else {
         worker = this.workers[workerIndexWithLessTask];
         workerIndex = workerIndexWithLessTask;
@@ -71,8 +86,7 @@ export class WorkerPool {
     }
 
     // Do RPC.
-    const promise = remoteProcedureCall<A, R>(
-      worker,
+    const promise = worker.remoteProcedureCall<A, R>(
       rpc,
       options,
     );
@@ -81,7 +95,7 @@ export class WorkerPool {
     this.runningTasks[workerIndex].delete(promise);
 
     // If task in queue, resume it.
-    const startNextTask = this.taskQueue.pop();
+    const startNextTask = this.taskQueue.shift();
     if (startNextTask) {
       startNextTask[0]([worker, workerIndex]);
     }
