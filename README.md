@@ -1,6 +1,6 @@
-# :film_strip: k7 - k6 like load testing using Deno
+# :film_strip: `casette` - k6 like load testing using Deno
 
-k7 (pronounced kə-sĕt′, kă-, like cassette in french) is a modern load testing
+cassette (pronounced kə-sĕt′, kă-, like cassette in french) is a modern load testing
 tool using JavaScript and [Deno][deno], inspired by [k6][k6].
 
 ## Why ?
@@ -23,7 +23,7 @@ the box.
 
 ## Contributing
 
-If you want to contribute to `k7` to add a feature or improve the code contact
+If you want to contribute to `cassette` to add a feature or improve the code contact
 me at [negrel.dev@protonmail.com](mailto:negrel.dev@protonmail.com), open an
 [issue](https://github.com/negrel/k7/issues) or make a
 [pull request](https://github.com/negrel/k7/pulls).
