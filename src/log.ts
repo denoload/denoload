@@ -6,8 +6,13 @@ const level: log.LevelName = "INFO";
 
 log.setup({
   handlers: {
-    console: new log.handlers.ConsoleHandler("DEBUG", {
-      formatter: "{datetime} {loggerName} [{levelName}] - {msg}",
+    console: new log.handlers.ConsoleHandler("NOTSET", {
+      formatter: (logRecord: log.LogRecord) => {
+        // deno-lint-ignore no-explicit-any
+        const args = logRecord.args.map((arg: any) => arg.toString()).join(" ");
+
+        return `${logRecord.datetime.toISOString()} [${logRecord.levelName}] [${logRecord.loggerName}] - ${logRecord.msg} ${args}`;
+      },
     }),
   },
 
