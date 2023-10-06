@@ -6,18 +6,20 @@ tool using JavaScript and [Deno][deno], inspired by [k6][k6].
 ## Why ?
 
 [k6][k6] is a great tool but it's lacking of libraries and community due to its
-custom JavaScript VM and API. Worse, there are edge cases where the VM isn't standard
-and can not be standard. This can lead to frustration.
+custom JavaScript VM and API. Worse, there are edge cases where the VM isn't
+standard and can not be. This can lead to frustration.
 
-Therefore here are goals of this *toy* project:
+Therefore here are goals of this _toy_ project:
 
 - great performance (comparable to [k6][k6])
 - write [k6][k6] like scripts with VU & executors
 - web APIs that feels like home
-- web & [NodeJS](https://nodejs.org) modules support
-- Modern JavaScript & TypeScript support out of the box (including `async` / `await`)
+- web modules support
+- Modern JavaScript & TypeScript support out of the box (including `async` /
+  `await`)
 
-This project is based on [Deno][deno] to provide the best DX experience out of the box.
+This project is based on [Deno][deno] to provide the best DX experience out of
+the box.
 
 ## Contributing
 
