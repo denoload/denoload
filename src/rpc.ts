@@ -38,31 +38,36 @@ export function remoteProcedureCall<A, R>(
   const msgId = globalMsgId++;
 
   return new Promise((resolve, reject) => {
-    const timerId = setTimeout(reject, timeout);
+    const timeoutId = setTimeout(() => {
+      reject(`rpc ${msgId} timed out`);
+    }, timeout);
 
+    // Response listener
     // deno-lint-ignore prefer-const
     let listener: (_: MessageEvent<RpcResult<R>>) => void;
     listener = (event: MessageEvent<RpcResult<R>>) => {
+      // Message is a response to our RPC.
       if (event.data.id !== msgId) {
         return;
       }
 
-      clearTimeout(timerId);
+      // Clear timeout and event listener..
+      clearTimeout(timeoutId);
       worker.removeEventListener("message", listener);
 
       logger.debug(
-        `rpc return ${event.data.id} ${JSON.stringify(event.data)}`,
+        `rpc ${event.data.id} returned ${JSON.stringify(event.data)}`,
       );
 
       if (event.data.error) {
-        reject(new Error(event.data.error));
+        reject(event.data.error);
       }
 
       resolve(event.data.result);
     };
     worker.addEventListener("message", listener);
 
-    logger.debug(`rpc call ${msgId} ${JSON.stringify(rpc)}`);
+    logger.debug(`rpc ${msgId} called ${JSON.stringify(rpc)}`);
     worker.postMessage({ id: msgId, ...rpc }, transfer);
   });
 }
@@ -100,7 +105,7 @@ export function workerProcedureHandler(
       });
     } catch (err) {
       logger.error(
-        `rpc ${event.data.id} error: ${err.toString()}`,
+        `rpc ${event.data.id} error: ${err.stack}`,
       );
 
       postMessage({
