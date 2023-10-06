@@ -1,4 +1,5 @@
 import log from "./log.ts";
+import { numCpus } from "./num_cpus.ts";
 import { RpcOptions, RpcWorker } from "./rpc.ts";
 
 const logger = log.getLogger("k7/main");
@@ -10,8 +11,8 @@ export interface WorkerPoolOptions {
 }
 
 const defaultWorkPoolOptions: WorkerPoolOptions = {
-  minWorker: 4,
-  maxWorker: 6,
+  minWorker: numCpus(),
+  maxWorker: numCpus(),
   maxTasksPerWorker: 128,
 };
 
