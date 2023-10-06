@@ -3,7 +3,7 @@ import log from "./log.ts";
 export interface RPC<A> {
   id: number;
   name: string;
-  args?: A;
+  args: A[];
 }
 
 export interface RpcResult<R> {
@@ -27,7 +27,7 @@ let globalMsgId = 0;
 
 export function remoteProcedureCall<A, R>(
   worker: Worker,
-  rpc: { name: string; args: A },
+  rpc: { name: string; args: A[] },
   options: Partial<RpcOptions> = {},
 ): Promise<R | undefined> {
   const { timeout, transfer } = {
@@ -93,7 +93,7 @@ export function workerProcedureHandler(
         throw new Error(`procedure "${event.data.name}" doesn't exist`);
       }
 
-      const result = await procedure(event.data.args);
+      const result = await procedure(...event.data.args);
 
       logger.debug(() =>
         `rpc ${event.data.id} done: ${JSON.stringify(result)}`

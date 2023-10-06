@@ -33,7 +33,7 @@ export class WorkerPool {
   }
 
   async remoteProcedureCall<A, R>(
-    rpc: { name: string; args: A },
+    rpc: { name: string; args: A[] },
     options?: Partial<RpcOptions>,
   ): Promise<R | undefined> {
     let worker = this.workers[0];

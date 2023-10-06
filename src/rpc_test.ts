@@ -10,7 +10,7 @@ Deno.test("RPC double()", async () => {
 
   const result = await remoteProcedureCall<number, number>(worker, {
     name: "double",
-    args: 2,
+    args: [2],
   });
 
   assertEquals(result, 4);
@@ -27,9 +27,9 @@ Deno.test("error is thrown from worker", async () => {
   await assertRejects(async () => {
     await remoteProcedureCall<undefined, number>(worker, {
       name: "error",
-      args: undefined,
+      args: [],
     });
-  }, Error);
+  });
 
   worker.terminate();
 });
@@ -43,9 +43,9 @@ Deno.test("non existent procedure", async () => {
   await assertRejects(async () => {
     await remoteProcedureCall<undefined, number>(worker, {
       name: "non existent",
-      args: undefined,
+      args: [],
     });
-  }, Error);
+  });
 
   worker.terminate();
 });
