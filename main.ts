@@ -2,7 +2,7 @@ import { Options } from "./src/datatypes.ts";
 import executors from "./src/executors.ts";
 import log from "./src/log.ts";
 
-const logger = log.getLogger("k7/main");
+const logger = log.getLogger("main");
 
 /**
  * Load a module and its exported options.
