@@ -41,15 +41,25 @@ self.onmessage = workerProcedureHandler({
     logger = log.getLogger("worker");
     logger.info("worker ready");
   },
-  async iteration(moduleURL: string) {
+  async iterations(moduleURL: string, nbIter: number) {
     const module = await import(moduleURL);
-    await module.default();
+
+    for (let i = 0; i < nbIter; i++) {
+      const start = performance.now();
+      await module.default();
+      performance.measure("iteration", {
+        start,
+        end: performance.now(),
+      });
+    }
   },
   collectPerformanceMetrics() {
     const result: Record<string, PerformanceMetric> = {
       fetch: computePerfMetric("fetch"),
+      iteration: computePerfMetric("iteration"),
     };
     performance.clearMeasures("fetch");
+    performance.clearMeasures("iteration");
 
     return result;
   },

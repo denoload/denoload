@@ -27,6 +27,7 @@ abstract class Executor {
   protected readonly workerPool: WorkerPool = new WorkerPool();
   private consoleReporterIntervalId: number | null = null;
   private consoleReporterCb = () => {};
+  protected performanceMetrics: Record<string, PerformanceMetric> = {};
 
   /**
    * Execute is the core logic of an executor.
@@ -42,7 +43,7 @@ abstract class Executor {
     scenarioOptions: ScenarioOptions,
   ): Promise<void>;
 
-  abstract scenarioProgress(): ScenarioProgress;
+  abstract scenarioProgress(): Promise<ScenarioProgress>;
 
   startConsoleReporter() {
     if (this.consoleReporterIntervalId) {
@@ -55,8 +56,8 @@ abstract class Executor {
     const progressBarFullChar =
       "==================================================";
 
-    this.consoleReporterIntervalId = setInterval(() => {
-      const progress = this.scenarioProgress();
+    this.consoleReporterIntervalId = setInterval(async () => {
+      const progress = await this.scenarioProgress();
       const duration = new Date().getTime() - startTime.getTime();
       const percentage = Math.floor(progress.percentage);
 
@@ -64,7 +65,7 @@ abstract class Executor {
       Deno.stdout.write(
         encoder.encode(
           `running (${
-            duration / 1000
+            Math.round(duration / 1000)
           }s), ${progress.currentVus}/${progress.maxVus}, ${progress.currentIterations}/${progress.maxIterations}\n`,
         ),
       );
@@ -79,7 +80,7 @@ abstract class Executor {
       );
 
       this.consoleReporterCb();
-    }, 1000);
+    }, 2000);
   }
 
   stopConsoleReporter(): Promise<void> | void {
@@ -93,7 +94,9 @@ abstract class Executor {
     }
   }
 
-  async collectPerformanceMetrics() {
+  async collectPerformanceMetrics(): Promise<
+    Record<string, PerformanceMetric>
+  > {
     // Collect metrics.
     const metrics = await this.workerPool
       .forEachWorkerRemoteProcedureCall<
@@ -102,7 +105,7 @@ abstract class Executor {
       >({
         name: "collectPerformanceMetrics",
         args: [],
-      });
+      }, { timeout: 1000 });
 
     const result: Record<string, PerformanceMetric>[] = [];
     for (const m of metrics) {
@@ -115,7 +118,11 @@ abstract class Executor {
       }
     }
 
-    return aggregateMetrics(...result);
+    this.performanceMetrics = aggregateMetrics(
+      this.performanceMetrics,
+      ...result,
+    );
+    return this.performanceMetrics;
   }
 }
 
@@ -126,8 +133,7 @@ export class ExecutorPerVuIteration extends Executor {
   private scenarioName = "";
   private currentVus = 0;
   private maxVus = 0;
-  private currentIterations = 0;
-  private maxIterations = 0;
+  private totalIterations = 0;
 
   override async execute(
     moduleURL: URL,
@@ -136,53 +142,54 @@ export class ExecutorPerVuIteration extends Executor {
   ): Promise<void> {
     logger.info(`executing "${scenarioName}" scenario...`);
     this.maxVus = scenarioOptions.vus;
-    this.maxIterations = scenarioOptions.iterations * this.maxVus;
+    this.totalIterations = scenarioOptions.iterations * this.maxVus;
     this.scenarioName = scenarioName;
 
     this.startConsoleReporter();
 
     logger.debug("running VUs...");
+    const scenarioStart = performance.now();
     const promises = new Array(scenarioOptions.vus);
     for (let vus = 0; vus < scenarioOptions.vus; vus++) {
-      promises[vus] = (async () => {
-        for (
-          let iterations = 0;
-          iterations < scenarioOptions.iterations;
-          iterations++
-        ) {
-          await this.workerPool.remoteProcedureCall({
-            name: "iteration",
-            args: [moduleURL.toString(), { vus, iterations }],
-          });
-          this.currentIterations++;
-        }
-      })();
-
+      promises[vus] = this.workerPool.remoteProcedureCall({
+        name: "iterations",
+        args: [moduleURL.toString(), scenarioOptions.iterations, { vus }],
+      });
       this.currentVus++;
     }
+
     // Wait end of all iterations.
     await Promise.all(promises);
+    const scenarioEnd = performance.now();
 
     // Collect metrics.
     const metrics = await this.collectPerformanceMetrics();
 
     // Clean up.
-    this.workerPool.terminate();
     await this.stopConsoleReporter();
+    this.workerPool.terminate();
     logger.debug("VUs ran.");
 
-    logger.info(`scenario "${scenarioName}" successfully executed.`);
+    logger.info(
+      `scenario "${scenarioName}" successfully executed in ${
+        scenarioEnd - scenarioStart
+      }ms.`,
+    );
     console.log(metrics);
   }
 
-  override scenarioProgress(): ScenarioProgress {
+  override async scenarioProgress(): Promise<ScenarioProgress> {
+    await this.collectPerformanceMetrics();
+    const currentIterations =
+      this.performanceMetrics["iteration"]?.datapoints || 0;
+
     return {
       scenarioName: this.scenarioName,
       currentVus: this.currentVus,
       maxVus: this.maxVus,
-      currentIterations: this.currentIterations,
-      maxIterations: this.maxIterations,
-      percentage: this.currentIterations / this.maxIterations * 100,
+      currentIterations,
+      maxIterations: this.totalIterations,
+      percentage: currentIterations / this.totalIterations * 100,
       extraInfos: "",
     };
   }
