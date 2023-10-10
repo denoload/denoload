@@ -92,8 +92,22 @@ export class WorkerPool {
     return result;
   }
 
+  forEachWorkerRemoteProcedureCall<A, R>(
+    rpc: { name: string; args: A[] },
+    options?: Partial<RpcOptions>,
+  ): Promise<Array<PromiseSettledResult<Awaited<R> | undefined>>> {
+    const promises = [];
+    for (const w of this.workers) {
+      promises.push(w.remoteProcedureCall<A, R>(rpc, options));
+    }
+
+    return Promise.allSettled(promises);
+  }
+
+  // Reject task in waiting queue and terminate workers.
   terminate() {
     while (this.taskQueue.length > 0) {
+      // Reject task in queue.
       this.taskQueue.pop()![1]("worker terminate");
     }
 

@@ -1,5 +1,6 @@
 import { ExecutorKind, ScenarioOptions } from "./datatypes.ts";
 import log from "./log.ts";
+import { aggregateMetrics, PerformanceMetric } from "./metrics.ts";
 import { WorkerPool } from "./worker_pool.ts";
 
 const logger = log.getLogger("main");
@@ -59,7 +60,7 @@ abstract class Executor {
       const duration = new Date().getTime() - startTime.getTime();
       const percentage = Math.floor(progress.percentage);
 
-      Deno.stdout.write(encoder.encode("\x1b[2A\x1b[K"));
+      // Deno.stdout.write(encoder.encode("\x1b[2A\x1b[K"));
       Deno.stdout.write(
         encoder.encode(
           `running (${
@@ -90,6 +91,31 @@ abstract class Executor {
         };
       });
     }
+  }
+
+  async collectPerformanceMetrics() {
+    // Collect metrics.
+    const metrics = await this.workerPool
+      .forEachWorkerRemoteProcedureCall<
+        never,
+        Record<string, PerformanceMetric>
+      >({
+        name: "collectPerformanceMetrics",
+        args: [],
+      });
+
+    const result: Record<string, PerformanceMetric>[] = [];
+    for (const m of metrics) {
+      if (m.status === "rejected") {
+        logger.error(
+          "one or more workers metrics were lost, result may be innacurate",
+        );
+      } else {
+        result.push(m.value!);
+      }
+    }
+
+    return aggregateMetrics(...result);
   }
 }
 
@@ -134,12 +160,19 @@ export class ExecutorPerVuIteration extends Executor {
 
       this.currentVus++;
     }
+    // Wait end of all iterations.
     await Promise.all(promises);
+
+    // Collect metrics.
+    const metrics = await this.collectPerformanceMetrics();
+
+    // Clean up.
     this.workerPool.terminate();
     await this.stopConsoleReporter();
     logger.debug("VUs ran.");
 
     logger.info(`scenario "${scenarioName}" successfully executed.`);
+    console.log(metrics);
   }
 
   override scenarioProgress(): ScenarioProgress {
