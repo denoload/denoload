@@ -5,12 +5,14 @@ import { RpcOptions, RpcWorker } from "./rpc.ts";
 const logger = log.getLogger("main");
 
 export interface WorkerPoolOptions {
+  workerScript: URL;
   minWorker: number;
   maxWorker: number;
   maxTasksPerWorker: number;
 }
 
 const defaultWorkPoolOptions: WorkerPoolOptions = {
+  workerScript: new URL("./worker_script.ts", import.meta.url),
   minWorker: numCpus(),
   maxWorker: numCpus(),
   maxTasksPerWorker: 128,
@@ -55,7 +57,7 @@ export class WorkerPool {
       }
 
       // All workers are full
-      if (workerMinTask >= this.options.maxTasksPerWorker) {
+      if (workerMinTask >= this.options.maxTasksPerWorker - 1) {
         if (this.workers.length < this.options.maxWorker) {
           [worker, workerIndex] = await this.createWorker();
           this.runningTasks.push(new Set());
@@ -103,11 +105,12 @@ export class WorkerPool {
   private async createWorker(): Promise<[RpcWorker, number]> {
     logger.info("spawning a new worker");
     const worker = new RpcWorker(
-      new URL("./worker_script.ts", import.meta.url),
+      this.options.workerScript,
       {
         type: "module",
       },
     );
+
     const index = this.workers.push(worker) - 1;
     this.runningTasks.push(new Set());
 

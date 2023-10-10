@@ -13,6 +13,7 @@ declare global {
 let logger = log.getLogger();
 
 self.onmessage = workerProcedureHandler({
+  // NOTE: setupWorker MUST NOT be async.
   setupWorker(workerId: number) {
     log.setup({
       handlers: {
