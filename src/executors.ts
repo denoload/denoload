@@ -3,6 +3,17 @@ import log from "./log.ts";
 import { WorkerPool } from "./worker_pool.ts";
 
 const logger = log.getLogger("main");
+const encoder = new TextEncoder();
+
+interface ScenarioProgress {
+  scenarioName: string;
+  currentVus: number;
+  maxVus: number;
+  currentIterations: number;
+  maxIterations: number;
+  percentage: number;
+  extraInfos: string;
+}
 
 /**
  * Executor are responsible for coordinating and managing the entire life cycle
@@ -13,9 +24,8 @@ const logger = log.getLogger("main");
  */
 abstract class Executor {
   protected readonly workerPool: WorkerPool = new WorkerPool();
-  protected nbVus = 0;
-  protected nbIter = 0;
   private consoleReporterIntervalId: number | null = null;
+  private consoleReporterCb = () => {};
 
   /**
    * Execute is the core logic of an executor.
@@ -31,23 +41,54 @@ abstract class Executor {
     scenarioOptions: ScenarioOptions,
   ): Promise<void>;
 
+  abstract scenarioProgress(): ScenarioProgress;
+
   startConsoleReporter() {
     if (this.consoleReporterIntervalId) {
       return this.consoleReporterIntervalId;
     }
 
+    const startTime = new Date();
+    const progressBarEmptyChar =
+      "--------------------------------------------------";
+    const progressBarFullChar =
+      "==================================================";
+
     this.consoleReporterIntervalId = setInterval(() => {
-      console.log(
-        `${
-          new Date().toISOString()
-        } - VUs: ${this.nbVus} - iterations: ${this.nbIter}`,
+      const progress = this.scenarioProgress();
+      const duration = new Date().getTime() - startTime.getTime();
+      const percentage = Math.floor(progress.percentage);
+
+      Deno.stdout.write(encoder.encode("\x1b[2A\x1b[K"));
+      Deno.stdout.write(
+        encoder.encode(
+          `running (${
+            duration / 1000
+          }s), ${progress.currentVus}/${progress.maxVus}, ${progress.currentIterations}/${progress.maxIterations}\n`,
+        ),
       );
+      Deno.stdout.write(
+        encoder.encode(
+          `${progress.scenarioName} [${
+            progressBarFullChar.slice(0, Math.floor(percentage / 2))
+          }${
+            progressBarEmptyChar.slice(0, 50 - Math.floor(percentage / 2))
+          }]\n`,
+        ),
+      );
+
+      this.consoleReporterCb();
     }, 1000);
   }
 
-  stopConsoleReporter() {
+  stopConsoleReporter(): Promise<void> | void {
     if (this.consoleReporterIntervalId) {
-      clearInterval(this.consoleReporterIntervalId);
+      return new Promise((resolve) => {
+        this.consoleReporterCb = () => {
+          clearInterval(this.consoleReporterIntervalId!);
+          resolve(undefined);
+        };
+      });
     }
   }
 }
@@ -56,12 +97,22 @@ abstract class Executor {
  * Per VU iteration executor managed a fixed amount of iteration per VU.
  */
 export class ExecutorPerVuIteration extends Executor {
+  private scenarioName = "";
+  private currentVus = 0;
+  private maxVus = 0;
+  private currentIterations = 0;
+  private maxIterations = 0;
+
   override async execute(
     moduleURL: URL,
     scenarioName: string,
     scenarioOptions: ScenarioOptions,
   ): Promise<void> {
     logger.info(`executing "${scenarioName}" scenario...`);
+    this.maxVus = scenarioOptions.vus;
+    this.maxIterations = scenarioOptions.iterations * this.maxVus;
+    this.scenarioName = scenarioName;
+
     this.startConsoleReporter();
 
     logger.debug("running VUs...");
@@ -77,18 +128,30 @@ export class ExecutorPerVuIteration extends Executor {
             name: "iteration",
             args: [moduleURL.toString(), { vus, iterations }],
           });
-          this.nbIter++;
+          this.currentIterations++;
         }
       })();
 
-      this.nbVus++;
+      this.currentVus++;
     }
     await Promise.all(promises);
-    this.stopConsoleReporter();
     this.workerPool.terminate();
+    await this.stopConsoleReporter();
     logger.debug("VUs ran.");
 
     logger.info(`scenario "${scenarioName}" successfully executed.`);
+  }
+
+  override scenarioProgress(): ScenarioProgress {
+    return {
+      scenarioName: this.scenarioName,
+      currentVus: this.currentVus,
+      maxVus: this.maxVus,
+      currentIterations: this.currentIterations,
+      maxIterations: this.maxIterations,
+      percentage: this.currentIterations / this.maxIterations * 100,
+      extraInfos: "",
+    };
   }
 }
 
