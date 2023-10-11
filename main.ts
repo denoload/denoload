@@ -19,7 +19,34 @@ async function loadOptions(moduleURL: URL): Promise<Options> {
   return module.options;
 }
 
+function printAsciiArt() {
+  const dino = [
+    "                __  ",
+    "               / _) ",
+    "      _.----._/ /   ",
+    "     /         /    ",
+    "  __/ (  | (  |     ",
+    " /__.-'|_|--|_|     ",
+  ];
+  const denoload = [
+    " ___                   _                _ ",
+    "|   \\  ___  _ _   ___ | | ___  __ _  __| |",
+    "| |) |/ -_)| ' \\ / _ \\| |/ _ \\/ _` |/ _` |",
+    "|___/ \\___||_||_|\\___/|_|\\___/\\__/_|\\__/_|",
+  ];
+
+  for (let i = 0; i < 6; i++) {
+    let str = dino[i];
+    if (i >= 1 && i < 5) {
+      str += denoload[i - 1];
+    }
+    console.log(str);
+  }
+  console.log();
+}
+
 (async () => {
+  printAsciiArt();
   const moduleURL = (() => {
     if (Deno.args.length < 1) {
       logger.error("modules URL missing");
