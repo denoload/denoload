@@ -22,6 +22,11 @@ Denoload aims to be an alternative with:
 This project is based on [Deno][deno] to provide the best DX experience out of
 the box.
 
+## Limitations
+
+Each worker (and therefor thread) handle a single VUs until [Shadow Realms](https://github.com/denoland/deno/issues/13239)
+are implemented.
+
 ## Contributing
 
 If you want to contribute to `cassette` to add a feature or improve the code contact

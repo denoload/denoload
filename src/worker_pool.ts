@@ -14,8 +14,10 @@ export interface WorkerPoolOptions {
 const defaultWorkPoolOptions: WorkerPoolOptions = {
   workerScript: new URL("./worker_script.ts", import.meta.url),
   minWorker: numCpus(),
-  maxWorker: numCpus(),
-  maxTasksPerWorker: 128,
+  // Until Shadow Realms are implemented in Deno, VUs are isolated in different workers.
+  // https://github.com/denoland/deno/issues/13239
+  maxWorker: Number.MAX_SAFE_INTEGER,
+  maxTasksPerWorker: 1,
 };
 
 export class WorkerPool {
@@ -45,7 +47,7 @@ export class WorkerPool {
 
     // Find a worker.
     if (this.workers.length < this.options.minWorker) {
-      [worker, workerIndex] = await this.createWorker();
+      [worker, workerIndex] =  this.createWorker();
     } else {
       let workerIndexWithLessTask = -1;
       let workerMinTask = Number.MAX_SAFE_INTEGER;
@@ -59,7 +61,7 @@ export class WorkerPool {
       // All workers are full
       if (workerMinTask >= this.options.maxTasksPerWorker - 1) {
         if (this.workers.length < this.options.maxWorker) {
-          [worker, workerIndex] = await this.createWorker();
+          [worker, workerIndex] =  this.createWorker();
           this.runningTasks.push(new Set());
         } else {
           // Wait for a new worker to be free.
@@ -116,7 +118,7 @@ export class WorkerPool {
     }
   }
 
-  private async createWorker(): Promise<[RpcWorker, number]> {
+  private createWorker(): [RpcWorker, number] {
     logger.info("spawning a new worker");
     const worker = new RpcWorker(
       this.options.workerScript,
@@ -128,7 +130,7 @@ export class WorkerPool {
     const index = this.workers.push(worker) - 1;
     this.runningTasks.push(new Set());
 
-    await worker.remoteProcedureCall({
+    worker.remoteProcedureCall({
       name: "setupWorker",
       args: [index],
     });
