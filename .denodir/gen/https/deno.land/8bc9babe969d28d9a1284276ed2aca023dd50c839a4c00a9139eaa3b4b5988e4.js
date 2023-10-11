@@ -1,0 +1,11 @@
+// Copyright 2018-2023 the Deno authors. All rights reserved. MIT license.
+// This module is browser compatible.
+import { isWindows } from "./_os.ts";
+import { posixDirname, windowsDirname } from "./_dirname.ts";
+/**
+ * Return the directory path of a `path`.
+ * @param path - path to extract the directory from.
+ */ export function dirname(path) {
+  return isWindows ? windowsDirname(path) : posixDirname(path);
+}
+//# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbImh0dHBzOi8vZGVuby5sYW5kL3N0ZEAwLjIwMy4wL3BhdGgvZGlybmFtZS50cyJdLCJzb3VyY2VzQ29udGVudCI6WyIvLyBDb3B5cmlnaHQgMjAxOC0yMDIzIHRoZSBEZW5vIGF1dGhvcnMuIEFsbCByaWdodHMgcmVzZXJ2ZWQuIE1JVCBsaWNlbnNlLlxuLy8gVGhpcyBtb2R1bGUgaXMgYnJvd3NlciBjb21wYXRpYmxlLlxuXG5pbXBvcnQgeyBpc1dpbmRvd3MgfSBmcm9tIFwiLi9fb3MudHNcIjtcbmltcG9ydCB7IHBvc2l4RGlybmFtZSwgd2luZG93c0Rpcm5hbWUgfSBmcm9tIFwiLi9fZGlybmFtZS50c1wiO1xuXG4vKipcbiAqIFJldHVybiB0aGUgZGlyZWN0b3J5IHBhdGggb2YgYSBgcGF0aGAuXG4gKiBAcGFyYW0gcGF0aCAtIHBhdGggdG8gZXh0cmFjdCB0aGUgZGlyZWN0b3J5IGZyb20uXG4gKi9cbmV4cG9ydCBmdW5jdGlvbiBkaXJuYW1lKHBhdGg6IHN0cmluZyk6IHN0cmluZyB7XG4gIHJldHVybiBpc1dpbmRvd3MgPyB3aW5kb3dzRGlybmFtZShwYXRoKSA6IHBvc2l4RGlybmFtZShwYXRoKTtcbn1cbiJdLCJuYW1lcyI6W10sIm1hcHBpbmdzIjoiQUFBQSwwRUFBMEU7QUFDMUUscUNBQXFDO0FBRXJDLFNBQVMsU0FBUyxRQUFRLFdBQVc7QUFDckMsU0FBUyxZQUFZLEVBQUUsY0FBYyxRQUFRLGdCQUFnQjtBQUU3RDs7O0NBR0MsR0FDRCxPQUFPLFNBQVMsUUFBUSxJQUFZO0VBQ2xDLE9BQU8sWUFBWSxlQUFlLFFBQVEsYUFBYTtBQUN6RCJ9

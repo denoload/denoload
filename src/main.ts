@@ -1,3 +1,5 @@
+import * as path from "std/path/mod.ts";
+
 import { Options } from "./datatypes.ts";
 import executors from "./executors.ts";
 import log from "./log.ts";
@@ -45,6 +47,11 @@ function printAsciiArt() {
   console.log();
 }
 
+Deno.addSignalListener("SIGINT", () => {
+  logger.warning("denoload received SIGINT...");
+  Deno.exit(1);
+});
+
 (async () => {
   printAsciiArt();
   const moduleURL = (() => {
@@ -53,7 +60,7 @@ function printAsciiArt() {
       Deno.exit(1);
     }
 
-    return new URL(Deno.args[0], import.meta.url);
+    return new URL(path.join("file://", Deno.cwd(), Deno.args[0]));
   })();
 
   logger.debug(`loading options of module "${moduleURL}"...`);

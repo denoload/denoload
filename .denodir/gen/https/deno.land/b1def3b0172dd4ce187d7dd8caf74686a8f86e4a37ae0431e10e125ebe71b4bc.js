@@ -1,0 +1,11 @@
+// Copyright 2018-2023 the Deno authors. All rights reserved. MIT license.
+// This module is browser compatible.
+import { isWindows } from "./_os.ts";
+import { posixJoin, windowsJoin } from "./_join.ts";
+/**
+ * Join all given a sequence of `paths`,then normalizes the resulting path.
+ * @param paths to be joined and normalized
+ */ export function join(...paths) {
+  return isWindows ? windowsJoin(...paths) : posixJoin(...paths);
+}
+//# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbImh0dHBzOi8vZGVuby5sYW5kL3N0ZEAwLjIwMy4wL3BhdGgvam9pbi50cyJdLCJzb3VyY2VzQ29udGVudCI6WyIvLyBDb3B5cmlnaHQgMjAxOC0yMDIzIHRoZSBEZW5vIGF1dGhvcnMuIEFsbCByaWdodHMgcmVzZXJ2ZWQuIE1JVCBsaWNlbnNlLlxuLy8gVGhpcyBtb2R1bGUgaXMgYnJvd3NlciBjb21wYXRpYmxlLlxuXG5pbXBvcnQgeyBpc1dpbmRvd3MgfSBmcm9tIFwiLi9fb3MudHNcIjtcbmltcG9ydCB7IHBvc2l4Sm9pbiwgd2luZG93c0pvaW4gfSBmcm9tIFwiLi9fam9pbi50c1wiO1xuXG4vKipcbiAqIEpvaW4gYWxsIGdpdmVuIGEgc2VxdWVuY2Ugb2YgYHBhdGhzYCx0aGVuIG5vcm1hbGl6ZXMgdGhlIHJlc3VsdGluZyBwYXRoLlxuICogQHBhcmFtIHBhdGhzIHRvIGJlIGpvaW5lZCBhbmQgbm9ybWFsaXplZFxuICovXG5leHBvcnQgZnVuY3Rpb24gam9pbiguLi5wYXRoczogc3RyaW5nW10pIHtcbiAgcmV0dXJuIGlzV2luZG93cyA/IHdpbmRvd3NKb2luKC4uLnBhdGhzKSA6IHBvc2l4Sm9pbiguLi5wYXRocyk7XG59XG4iXSwibmFtZXMiOltdLCJtYXBwaW5ncyI6IkFBQUEsMEVBQTBFO0FBQzFFLHFDQUFxQztBQUVyQyxTQUFTLFNBQVMsUUFBUSxXQUFXO0FBQ3JDLFNBQVMsU0FBUyxFQUFFLFdBQVcsUUFBUSxhQUFhO0FBRXBEOzs7Q0FHQyxHQUNELE9BQU8sU0FBUyxLQUFLLEdBQUcsS0FBZTtFQUNyQyxPQUFPLFlBQVksZUFBZSxTQUFTLGFBQWE7QUFDMUQifQ==

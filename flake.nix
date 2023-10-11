@@ -14,6 +14,8 @@
         devShells = {
           default = pkgs.mkShell {
             buildInputs = with pkgs; [ deno ];
+
+            DENO_DIR = ".denodir";
           };
         };
         packages = {
@@ -26,9 +28,13 @@
               paths = [ ./. ];
               extraPrefix = "/denoload";
             };
+
             config = {
               Entrypoint = [ "${pkgs.deno}/bin/deno" "run" "-A" "/denoload/src/main.ts" ];
               WorkingDir = "/tests";
+              Env = [
+                "DENO_DIR=/denoload/.denodir"
+              ];
             };
           };
         };
