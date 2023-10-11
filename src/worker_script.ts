@@ -32,6 +32,7 @@ self.onmessage = workerProcedureHandler({
       },
       loggers: {
         "worker": {
+          level: "WARNING",
           handlers: ["worker"],
         },
       },
