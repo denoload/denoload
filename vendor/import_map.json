@@ -1,0 +1,7 @@
+{
+  "imports": {
+    "std/log/mod.ts": "./deno.land/std@0.203.0/log/mod.ts",
+    "std/path/mod.ts": "./deno.land/std@0.203.0/path/mod.ts",
+    "https://deno.land/": "./deno.land/"
+  }
+}
