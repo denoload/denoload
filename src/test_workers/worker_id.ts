@@ -20,8 +20,10 @@ self.onmessage = workerProcedureHandler({
       setTimeout(resolve, ms);
     });
   },
-	// deno-lint-ignore no-explicit-any
-  sleepAndReturnWorkerIdAndArgs(...args: any[]): Promise<{workerId: number, args: any[]}> {
+  // deno-lint-ignore no-explicit-any
+  sleepAndReturnWorkerIdAndArgs(
+    ...args: any[]
+  ): Promise<{ workerId: number; args: any[] }> {
     return new Promise((resolve, reject) => {
       setTimeout(() => {
         if (workerId == null) {
