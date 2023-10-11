@@ -80,7 +80,7 @@ abstract class Executor {
       );
 
       this.consoleReporterCb();
-    }, 2000);
+    }, 1000);
   }
 
   stopConsoleReporter(): Promise<void> | void {
