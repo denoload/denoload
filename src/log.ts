@@ -9,7 +9,8 @@ log.setup({
     main: new log.handlers.ConsoleHandler("NOTSET", {
       formatter: (logRecord: log.LogRecord) => {
         // deno-lint-ignore no-explicit-any
-        const args = logRecord.args.map((arg: any) => arg.toString()).join(" ");
+        const args = logRecord.args.map((arg: any) => JSON.stringify(arg))
+          .join(" ");
 
         return `${logRecord.datetime.toISOString()} [${logRecord.levelName}] [${logRecord.loggerName}] - ${logRecord.msg} ${args}`;
       },
