@@ -27,6 +27,8 @@ the box.
 Each worker (and therefor thread) handle a single VUs until [Shadow Realms](https://github.com/denoland/deno/issues/13239)
 are implemented.
 
+Cookies are not supported.
+
 ## Contributing
 
 If you want to contribute to `cassette` to add a feature or improve the code contact
