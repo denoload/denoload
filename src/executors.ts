@@ -66,7 +66,7 @@ abstract class Executor {
         encoder.encode(
           `running (${
             Math.round(duration / 1000)
-          }s), ${progress.currentVus}/${progress.maxVus}, ${progress.currentIterations}/${progress.maxIterations}\n`,
+          }s), ${progress.currentVus}/${progress.maxVus} VUs, ${progress.currentIterations}/${progress.maxIterations} iterations.\n`,
         ),
       );
       Deno.stdout.write(
