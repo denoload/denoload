@@ -1,6 +1,6 @@
-import { Options } from "./src/datatypes.ts";
-import executors from "./src/executors.ts";
-import log from "./src/log.ts";
+import { Options } from "./datatypes.ts";
+import executors from "./executors.ts";
+import log from "./log.ts";
 
 const logger = log.getLogger("main");
 
