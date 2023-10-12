@@ -1,8 +1,8 @@
-import { assertEquals } from "std/assert/assert_equals.ts";
-import { assertRejects } from "std/assert/assert_rejects.ts";
+import { test, expect } from "bun:test";
+
 import { RpcWorker } from "./rpc.ts";
 
-Deno.test("RPC double()", async () => {
+test("RPC double()", async () => {
   const worker = new RpcWorker(
     new URL("./test_workers/double.ts", import.meta.url).href,
     { type: "module" },
@@ -13,39 +13,37 @@ Deno.test("RPC double()", async () => {
     args: [2],
   });
 
-  assertEquals(result, 4);
+  expect(result).toEqual(4);
 
   worker.terminate();
 });
 
-Deno.test("error is thrown from worker", async () => {
+test("error is thrown from worker", async () => {
   const worker = new RpcWorker(
     new URL("./test_workers/error.ts", import.meta.url).href,
     { type: "module" },
   );
 
-  await assertRejects(async () => {
-    await worker.remoteProcedureCall<undefined, number>({
+  expect(worker.remoteProcedureCall<undefined, number>({
       name: "error",
       args: [],
-    });
-  });
+    })
+  ).rejects.toEqual("Error: runtime error from worker");
 
   worker.terminate();
 });
 
-Deno.test("non existent procedure", async () => {
+test("non existent procedure", async () => {
   const worker = new RpcWorker(
     new URL("./test_workers/error.ts", import.meta.url).href,
     { type: "module" },
   );
 
-  await assertRejects(async () => {
-    await worker.remoteProcedureCall<undefined, number>({
+  expect(worker.remoteProcedureCall<undefined, number>({
       name: "non existent",
       args: [],
-    });
-  });
+    })
+  ).rejects.toEqual("Error: procedure \"non existent\" doesn't exist");
 
   worker.terminate();
 });
