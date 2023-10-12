@@ -45,7 +45,7 @@ abstract class Executor {
 
   startConsoleReporter (): void {
     if (this.consoleReporterIntervalId !== null) {
-      return this.consoleReporterIntervalId
+      return
     }
 
     const startTime = new Date()

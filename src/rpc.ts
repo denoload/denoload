@@ -133,11 +133,11 @@ export function workerProcedureHandler (
         result
       }, [])
     } catch (err) {
+      const errStr = (err as any)?.stack ?? (err as any).toString()
       logger.error(
-        `rpc ${event.data.id} error: ${err.stack}`
+        `rpc ${event.data.id} error: ${errStr}`
       )
 
-      const errStr = err.toString()
       postMessage({
         id: event.data.id,
         error: errStr // TODO(negrel): serialize before posting message.

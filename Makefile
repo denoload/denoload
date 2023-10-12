@@ -9,6 +9,9 @@ lint:
 lint/fix:
 	bunx eslint --fix src/
 
+check:
+	bunx tsc
+
 docker/build:
 	nix build .#docker
 	docker load < result
