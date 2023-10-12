@@ -1,10 +1,8 @@
-import * as path from "std/path/mod.ts";
-
 import { Options } from "./datatypes.ts";
 import executors from "./executors.ts";
-import log from "./log.ts";
+import * as log from "./log.ts"
 
-const logger = log.getLogger("main");
+const logger = log.getLogger("main")
 
 /**
  * Load a module and its exported options.
@@ -47,24 +45,27 @@ function printAsciiArt() {
   console.log();
 }
 
-Deno.addSignalListener("SIGINT", () => {
-  logger.warning("denoload received SIGINT...");
-  Deno.exit(1);
+process.on("SIGINT", () => {
+  logger.warn("denoload received SIGINT...");
+  process.exit(1);
 });
 
 (async () => {
   printAsciiArt();
   const moduleURL = (() => {
-    if (Deno.args.length < 1) {
+		logger.debug("CLI arguments", Bun.argv)
+
+    if (Bun.argv.length < 3) {
       logger.error("modules URL missing");
-      Deno.exit(1);
+      process.exit(1);
     }
 
-    return new URL(path.join("file://", Deno.cwd(), Deno.args[0]));
+    return new URL(Bun.argv[2], "file://" + process.cwd() + "/");
   })();
 
   logger.debug(`loading options of module "${moduleURL}"...`);
   const options = await loadOptions(moduleURL);
+	logger.debug("loaded options", options)
 
   for (
     const [scenarioName, scenarioOptions] of Object.entries(options.scenarios)

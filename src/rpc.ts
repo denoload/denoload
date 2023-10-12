@@ -18,7 +18,7 @@ export interface RpcOptions {
 }
 
 const defaultRpcOptions: RpcOptions = {
-  timeout: 30000,
+  timeout: 300000,
   transfer: [],
 };
 
@@ -104,7 +104,7 @@ export function workerProcedureHandler(
   // deno-lint-ignore no-explicit-any
   procedures: Record<string, (...args: any[]) => any>,
   // deno-lint-ignore no-explicit-any
-  postMessage: (_: RpcResult<any>) => void,
+  postMessage: (message: any, transfer: Transferable[]) => void,
   // deno-lint-ignore no-explicit-any
 ): (_: MessageEvent<RPC<any>>) => void {
   const logger = log.getLogger("worker");
@@ -130,16 +130,17 @@ export function workerProcedureHandler(
       postMessage({
         id: event.data.id,
         result,
-      });
+      }, []);
     } catch (err) {
       logger.error(
         `rpc ${event.data.id} error: ${err.stack}`,
       );
 
+      const errStr = err.toString();
       postMessage({
         id: event.data.id,
-        error: err.toString(), // TODO(negrel): serialize before posting message.
-      });
+        error: errStr, // TODO(negrel): serialize before posting message.
+      }, []);
     }
   };
 }

@@ -1,26 +1,14 @@
-import * as log from "std/log/mod.ts";
+import * as bunyan from "bunyan"
 
-export default log;
+export function getLogger(name: string) {
+		return bunyan.createLogger({
+			name,
+			level: "info",
+			stream: process.stderr
+		})
+	}
 
-const level: log.LevelName = "WARNING";
 
-log.setup({
-  handlers: {
-    main: new log.handlers.ConsoleHandler("NOTSET", {
-      formatter: (logRecord: log.LogRecord) => {
-        // deno-lint-ignore no-explicit-any
-        const args = logRecord.args.map((arg: any) => JSON.stringify(arg))
-          .join(" ");
-
-        return `${logRecord.datetime.toISOString()} [${logRecord.levelName}] [${logRecord.loggerName}] - ${logRecord.msg} ${args}`;
-      },
-    }),
-  },
-  loggers: {
-    // Main thread.
-    "main": {
-      level,
-      handlers: ["main"],
-    },
-  },
-});
+export default {
+	getLogger
+}

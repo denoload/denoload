@@ -14,10 +14,8 @@ export interface WorkerPoolOptions {
 const defaultWorkPoolOptions: WorkerPoolOptions = {
   workerScript: new URL("./worker_script.ts", import.meta.url),
   minWorker: numCpus(),
-  // Until Shadow Realms are implemented in Deno, VUs are isolated in different workers.
-  // https://github.com/denoland/deno/issues/13239
-  maxWorker: Number.MAX_SAFE_INTEGER,
-  maxTasksPerWorker: 1,
+  maxWorker: numCpus(),
+  maxTasksPerWorker: 256,
 };
 
 export class WorkerPool {

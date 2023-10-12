@@ -1,6 +1,5 @@
 import { ExecutorKind, ScenarioOptions } from "./datatypes.ts";
 import log from "./log.ts";
-import { aggregateMetrics, PerformanceMetric } from "./metrics.ts";
 import { WorkerPool } from "./worker_pool.ts";
 
 const logger = log.getLogger("main");
@@ -27,7 +26,6 @@ abstract class Executor {
   protected readonly workerPool: WorkerPool = new WorkerPool();
   private consoleReporterIntervalId: number | null = null;
   private consoleReporterCb = () => {};
-  protected performanceMetrics: Record<string, PerformanceMetric> = {};
 
   /**
    * Execute is the core logic of an executor.
@@ -62,14 +60,14 @@ abstract class Executor {
       const percentage = Math.floor(progress.percentage);
 
       // Deno.stdout.write(encoder.encode("\x1b[2A\x1b[K"));
-      Deno.stdout.write(
+      process.stdout.write(
         encoder.encode(
           `running (${
             Math.round(duration / 1000)
           }s), ${progress.currentVus}/${progress.maxVus} VUs, ${progress.currentIterations}/${progress.maxIterations} iterations.\n`,
         ),
       );
-      Deno.stdout.write(
+      process.stdout.write(
         encoder.encode(
           `${progress.scenarioName} [${
             progressBarFullChar.slice(0, Math.floor(percentage / 2))
@@ -94,36 +92,31 @@ abstract class Executor {
     }
   }
 
-  async collectPerformanceMetrics(): Promise<
-    Record<string, PerformanceMetric>
-  > {
-    // Collect metrics.
-    const metrics = await this.workerPool
-      .forEachWorkerRemoteProcedureCall<
-        never,
-        Record<string, PerformanceMetric>
-      >({
-        name: "collectPerformanceMetrics",
-        args: [],
-      }, { timeout: 1000 });
-
-    const result: Record<string, PerformanceMetric>[] = [];
-    for (const m of metrics) {
-      if (m.status === "rejected") {
-        logger.error(
-          "one or more workers metrics were lost, result may be innacurate",
-        );
-      } else {
-        result.push(m.value!);
-      }
-    }
-
-    this.performanceMetrics = aggregateMetrics(
-      this.performanceMetrics,
-      ...result,
-    );
-    return this.performanceMetrics;
-  }
+  // async collectPerformanceMetrics(): Promise<
+  //   Record<string, PerformanceMetric>
+  // > {
+  //   // Collect metrics.
+  //   const metrics = await this.workerPool
+  //     .forEachWorkerRemoteProcedureCall<
+  //       never,
+  //       Record<string, PerformanceMetric>
+  //     >({
+  //       name: "collectPerformanceMetrics",
+  //       args: [],
+  //     }, { timeout: 1000 });
+  //
+  //   const result: Record<string, PerformanceMetric>[] = [];
+  //   for (const m of metrics) {
+  //     if (m.status === "rejected") {
+  //       logger.error(
+  //         "one or more workers metrics were lost, result may be innacurate:",
+  //         m.reason,
+  //       );
+  //     } else {
+  //       result.push(m.value!);
+  //     }
+  //   }
+  // }
 }
 
 /**
@@ -153,7 +146,7 @@ export class ExecutorPerVuIteration extends Executor {
     for (let vus = 0; vus < scenarioOptions.vus; vus++) {
       promises[vus] = this.workerPool.remoteProcedureCall({
         name: "iterations",
-        args: [moduleURL.toString(), scenarioOptions.iterations, { vus }],
+        args: [moduleURL.toString(), scenarioOptions.iterations, vus],
       });
       this.currentVus++;
     }
@@ -162,8 +155,10 @@ export class ExecutorPerVuIteration extends Executor {
     await Promise.all(promises);
     const scenarioEnd = performance.now();
 
-    // Collect metrics.
-    const metrics = await this.collectPerformanceMetrics();
+    await this.workerPool.forEachWorkerRemoteProcedureCall({
+      name: "cleanupWorker",
+      args: [],
+    });
 
     // Clean up.
     await this.stopConsoleReporter();
@@ -175,21 +170,19 @@ export class ExecutorPerVuIteration extends Executor {
         scenarioEnd - scenarioStart
       }ms.`,
     );
-    console.log(metrics);
   }
 
   override async scenarioProgress(): Promise<ScenarioProgress> {
-    await this.collectPerformanceMetrics();
-    const currentIterations =
-      this.performanceMetrics["iteration"]?.datapoints || 0;
+    // const stats = await fetchStats();
+		const stats = {iteration: { count: 0}}
 
     return {
       scenarioName: this.scenarioName,
       currentVus: this.currentVus,
       maxVus: this.maxVus,
-      currentIterations,
+      currentIterations: stats?.iteration?.count ?? 0,
       maxIterations: this.totalIterations,
-      percentage: currentIterations / this.totalIterations * 100,
+      percentage: (stats?.iteration?.count ?? 0) / this.totalIterations * 100,
       extraInfos: "",
     };
   }
