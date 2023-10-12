@@ -3,23 +3,21 @@
  */
 export enum ExecutorKind {
   // A fixed amount of iteration per VU
-  PerVuIteration = "per-vu-iterations",
+  PerVuIteration = 'per-vu-iterations',
 }
 
 /**
  * Options defines options exported by a test script.
  */
 export interface Options {
-  scenarios: {
-    [key: string]: ScenarioOptions;
-  };
+  scenarios: Record<string, ScenarioOptions>
 }
 
 /**
  * ScenarioOptions defines options of a scenario exported by a test script.
  */
 export interface ScenarioOptions {
-  executor: ExecutorKind;
-  vus: number;
-  iterations: number;
+  executor: ExecutorKind
+  vus: number
+  iterations: number
 }

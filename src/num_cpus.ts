@@ -1,5 +1,5 @@
-import os from "node:os";
+import os from 'node:os'
 
-export function numCpus() {
-  return os.cpus().length;
+export function numCpus (): number {
+  return os.cpus().length
 }

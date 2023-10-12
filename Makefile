@@ -1,13 +1,13 @@
 export MAKEFLAGS += --always-make
 
-check:
-	deno check src/*.ts src/**/*.ts
+test:
+	bun test
 
 lint:
-	deno lint src/
+	bunx eslint src/
 
-deno/cache:
-	deno cache src/main.ts
+lint/fix:
+	bunx eslint --fix src/
 
 docker/build:
 	nix build .#docker

@@ -1,18 +1,18 @@
-import { ExecutorKind, ScenarioOptions } from "./datatypes.ts";
-import log from "./log.ts";
-import { WorkerPool } from "./worker_pool.ts";
+import { ExecutorKind, type ScenarioOptions } from './datatypes.ts'
+import log from './log.ts'
+import { WorkerPool } from './worker_pool.ts'
 
-const logger = log.getLogger("main");
-const encoder = new TextEncoder();
+const logger = log.getLogger('main')
+const encoder = new TextEncoder()
 
 interface ScenarioProgress {
-  scenarioName: string;
-  currentVus: number;
-  maxVus: number;
-  currentIterations: number;
-  maxIterations: number;
-  percentage: number;
-  extraInfos: string;
+  scenarioName: string
+  currentVus: number
+  maxVus: number
+  currentIterations: number
+  maxIterations: number
+  percentage: number
+  extraInfos: string
 }
 
 /**
@@ -23,9 +23,9 @@ interface ScenarioProgress {
  * the worker pool.
  */
 abstract class Executor {
-  protected readonly workerPool: WorkerPool = new WorkerPool();
-  private consoleReporterIntervalId: number | null = null;
-  private consoleReporterCb = () => {};
+  protected readonly workerPool: WorkerPool = new WorkerPool()
+  private consoleReporterIntervalId: NodeJS.Timeout | null = null
+  private consoleReporterCb = (): void => {}
 
   /**
    * Execute is the core logic of an executor.
@@ -35,60 +35,61 @@ abstract class Executor {
    * @param scenarioName - Name of the scenario.
    * @param scenarioOptions - Options of the scenario to run.
    */
-  abstract execute(
+  abstract execute (
     moduleURL: URL,
     scenarioName: string,
     scenarioOptions: ScenarioOptions,
-  ): Promise<void>;
+  ): Promise<void>
 
-  abstract scenarioProgress(): Promise<ScenarioProgress>;
+  abstract scenarioProgress (): Promise<ScenarioProgress>
 
-  startConsoleReporter() {
-    if (this.consoleReporterIntervalId) {
-      return this.consoleReporterIntervalId;
+  startConsoleReporter (): void {
+    if (this.consoleReporterIntervalId !== null) {
+      return this.consoleReporterIntervalId
     }
 
-    const startTime = new Date();
+    const startTime = new Date()
     const progressBarEmptyChar =
-      "--------------------------------------------------";
+      '--------------------------------------------------'
     const progressBarFullChar =
-      "==================================================";
+      '=================================================='
 
     this.consoleReporterIntervalId = setInterval(async () => {
-      const progress = await this.scenarioProgress();
-      const duration = new Date().getTime() - startTime.getTime();
-      const percentage = Math.floor(progress.percentage);
+      const progress = await this.scenarioProgress()
+      const duration = new Date().getTime() - startTime.getTime()
+      const percentage = Math.floor(progress.percentage)
 
       // Deno.stdout.write(encoder.encode("\x1b[2A\x1b[K"));
       process.stdout.write(
         encoder.encode(
           `running (${
             Math.round(duration / 1000)
-          }s), ${progress.currentVus}/${progress.maxVus} VUs, ${progress.currentIterations}/${progress.maxIterations} iterations.\n`,
-        ),
-      );
+          }s), ${progress.currentVus}/${progress.maxVus} VUs, ${progress.currentIterations}/${progress.maxIterations} iterations.\n`
+        )
+      )
       process.stdout.write(
         encoder.encode(
           `${progress.scenarioName} [${
             progressBarFullChar.slice(0, Math.floor(percentage / 2))
           }${
             progressBarEmptyChar.slice(0, 50 - Math.floor(percentage / 2))
-          }]\n`,
-        ),
-      );
+          }]\n`
+        )
+      )
 
-      this.consoleReporterCb();
-    }, 1000);
+      this.consoleReporterCb()
+    }, 1000)
   }
 
-  stopConsoleReporter(): Promise<void> | void {
-    if (this.consoleReporterIntervalId) {
+  stopConsoleReporter (): Promise<void> | void {
+    if (this.consoleReporterIntervalId !== null) {
       return new Promise((resolve) => {
         this.consoleReporterCb = () => {
-          clearInterval(this.consoleReporterIntervalId!);
-          resolve(undefined);
-        };
-      });
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          clearInterval(this.consoleReporterIntervalId!)
+          resolve(undefined)
+        }
+      })
     }
   }
 
@@ -123,58 +124,58 @@ abstract class Executor {
  * Per VU iteration executor managed a fixed amount of iteration per VU.
  */
 export class ExecutorPerVuIteration extends Executor {
-  private scenarioName = "";
-  private currentVus = 0;
-  private maxVus = 0;
-  private totalIterations = 0;
+  private scenarioName = ''
+  private currentVus = 0
+  private maxVus = 0
+  private totalIterations = 0
 
-  override async execute(
+  override async execute (
     moduleURL: URL,
     scenarioName: string,
-    scenarioOptions: ScenarioOptions,
+    scenarioOptions: ScenarioOptions
   ): Promise<void> {
-    logger.info(`executing "${scenarioName}" scenario...`);
-    this.maxVus = scenarioOptions.vus;
-    this.totalIterations = scenarioOptions.iterations * this.maxVus;
-    this.scenarioName = scenarioName;
+    logger.info(`executing "${scenarioName}" scenario...`)
+    this.maxVus = scenarioOptions.vus
+    this.totalIterations = scenarioOptions.iterations * this.maxVus
+    this.scenarioName = scenarioName
 
-    this.startConsoleReporter();
+    this.startConsoleReporter()
 
-    logger.debug("running VUs...");
-    const scenarioStart = performance.now();
-    const promises = new Array(scenarioOptions.vus);
+    logger.debug('running VUs...')
+    const scenarioStart = performance.now()
+    const promises = new Array(scenarioOptions.vus)
     for (let vus = 0; vus < scenarioOptions.vus; vus++) {
       promises[vus] = this.workerPool.remoteProcedureCall({
-        name: "iterations",
-        args: [moduleURL.toString(), scenarioOptions.iterations, vus],
-      });
-      this.currentVus++;
+        name: 'iterations',
+        args: [moduleURL.toString(), scenarioOptions.iterations, vus]
+      })
+      this.currentVus++
     }
 
     // Wait end of all iterations.
-    await Promise.all(promises);
-    const scenarioEnd = performance.now();
+    await Promise.all(promises)
+    const scenarioEnd = performance.now()
 
     await this.workerPool.forEachWorkerRemoteProcedureCall({
-      name: "cleanupWorker",
-      args: [],
-    });
+      name: 'cleanupWorker',
+      args: []
+    })
 
     // Clean up.
-    await this.stopConsoleReporter();
-    this.workerPool.terminate();
-    logger.debug("VUs ran.");
+    await this.stopConsoleReporter()
+    this.workerPool.terminate()
+    logger.debug('VUs ran.')
 
     logger.info(
       `scenario "${scenarioName}" successfully executed in ${
         scenarioEnd - scenarioStart
-      }ms.`,
-    );
+      }ms.`
+    )
   }
 
-  override async scenarioProgress(): Promise<ScenarioProgress> {
+  override async scenarioProgress (): Promise<ScenarioProgress> {
     // const stats = await fetchStats();
-		const stats = {iteration: { count: 0}}
+    const stats = { iteration: { count: 0 } }
 
     return {
       scenarioName: this.scenarioName,
@@ -183,8 +184,8 @@ export class ExecutorPerVuIteration extends Executor {
       currentIterations: stats?.iteration?.count ?? 0,
       maxIterations: this.totalIterations,
       percentage: (stats?.iteration?.count ?? 0) / this.totalIterations * 100,
-      extraInfos: "",
-    };
+      extraInfos: ''
+    }
   }
 }
 
@@ -192,7 +193,7 @@ export class ExecutorPerVuIteration extends Executor {
  * Map of executors.
  */
 const executors: { [key in ExecutorKind]: new () => Executor } = {
-  [ExecutorKind.PerVuIteration]: ExecutorPerVuIteration,
-};
+  [ExecutorKind.PerVuIteration]: ExecutorPerVuIteration
+}
 
-export default executors;
+export default executors

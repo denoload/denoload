@@ -5,4 +5,12 @@ module.exports = {
       extends: 'standard-with-typescript'
     }
   ],
+  rules: {
+    "@typescript-eslint/no-misused-promises": [
+      "error",
+      {
+        "checksVoidReturn": false
+      }
+    ]
+  }
 }
