@@ -13,6 +13,4 @@ check:
 	bunx tsc
 
 docker/build:
-	nix build .#docker
-	docker load < result
-	rm -f result
+	DOCKER_BUILDKIT=1 docker build . -t negrel/denoload:dev
