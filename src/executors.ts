@@ -115,7 +115,7 @@ export class ExecutorPerVuIteration extends Executor {
     this.startConsoleReporter()
 
     logger.debug('running VUs...')
-    const scenarioStart = performance.now()
+    const scenarioStart = Bun.nanoseconds()
     const promises = new Array(scenarioOptions.vus)
     for (let vus = 0; vus < scenarioOptions.vus; vus++) {
       promises[vus] = this.workerPool.remoteProcedureCall({
@@ -127,12 +127,7 @@ export class ExecutorPerVuIteration extends Executor {
 
     // Wait end of all iterations.
     await Promise.all(promises)
-    const scenarioEnd = performance.now()
-
-    await this.workerPool.forEachWorkerRemoteProcedureCall({
-      name: 'cleanupWorker',
-      args: []
-    })
+    const scenarioEnd = Bun.nanoseconds()
 
     // Clean up.
     await this.stopConsoleReporter()

@@ -27,7 +27,5 @@ self.onmessage = workerProcedureHandler({
     }
 
     return total
-  },
-  async cleanupWorker (): Promise<void> {
   }
 }, self.postMessage)
