@@ -3,4 +3,4 @@
 !src/*.ts
 !package.json
 !bun.lockb
-!tsconfig.ajsonc
+!tsconfig.json
