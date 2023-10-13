@@ -2,8 +2,11 @@
 // promises in exported function.
 /* eslint-disable @typescript-eslint/no-floating-promises */
 
-const metrics = {
-  iterations: [] as number[],
+import { type Metrics } from './metrics.ts'
+
+const metrics: Metrics = {
+  fetch: [],
+  iterations: [],
   iterationsDone: 0,
   iterationsFailed: 0
 }
@@ -43,6 +46,10 @@ export function iterationsTotal (): number {
   return metrics.iterationsDone + metrics.iterationsFailed
 }
 
+export function jsonMetrics (): string {
+  return JSON.stringify(metrics)
+}
+
 const realGlobalThis = {
   fetch: globalThis.fetch
 }
@@ -56,9 +63,9 @@ function restoreGlobalThis (): void {
 }
 
 function doFetch (input: string | URL | Request, init?: RequestInit): any {
-  // const start = Bun.nanoseconds()
+  const start = Bun.nanoseconds()
   const p = realGlobalThis.fetch(input, init)
-  // p.finally(() => metrics.fetch.push(['fetch', Bun.nanoseconds() - start]))
+  p.then(() => metrics.fetch.push(Bun.nanoseconds() - start))
 
   return p
 }

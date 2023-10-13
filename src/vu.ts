@@ -1,3 +1,5 @@
+import { type Metrics } from './metrics.ts'
+
 export class VU {
   private readonly realm: ShadowRealm
   private readonly pollIntervalMillis: number
@@ -12,6 +14,11 @@ export class VU {
 
   get iterations (): number {
     return this._iterations
+  }
+
+  async metrics (): Promise<Metrics> {
+    const jsonMetrics: () => string = await this.realm.importValue('./vu_shadow_realm.ts', 'jsonMetrics')
+    return JSON.parse(jsonMetrics()) as Metrics
   }
 
   async doIterations (moduleUrl: string, iterations: number): Promise<void> {

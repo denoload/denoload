@@ -1,5 +1,7 @@
 import { ExecutorKind, type ScenarioOptions } from './datatypes.ts'
 import log from './log.ts'
+import { type Metrics, mergeMetrics, performanceReport, type PerformanceReport } from './metrics.ts'
+import { formatDuration } from './utils.ts'
 import { WorkerPool } from './worker_pool.ts'
 
 const logger = log.getLogger('main')
@@ -91,6 +93,12 @@ abstract class Executor {
       })
     }
   }
+
+  printPerformanceReport (report: PerformanceReport): void {
+    for (const [name, value] of Object.entries(report)) {
+      console.log(`${name}: total=${value.total} min=${formatDuration(value.min)}, max=${formatDuration(value.max)}, avg=${formatDuration(value.avg)}, p50=${formatDuration(value.p50)}, p95=${formatDuration(value.p95)}, p99=${formatDuration(value.p99)}`)
+    }
+  }
 }
 
 /**
@@ -120,25 +128,44 @@ export class ExecutorPerVuIteration extends Executor {
     for (let vus = 0; vus < scenarioOptions.vus; vus++) {
       promises[vus] = this.workerPool.remoteProcedureCall({
         name: 'iterations',
-        args: [moduleURL.toString(), scenarioOptions.iterations, vus]
+        args: [moduleURL.toString(), scenarioOptions.iterations, vus, 10]
       })
       this.currentVus++
     }
 
     // Wait end of all iterations.
     await Promise.all(promises)
+    logger.debug('VUs ran.')
     const scenarioEnd = Bun.nanoseconds()
 
-    // Clean up.
+    // Stop console reported test is done.
     await this.stopConsoleReporter()
-    this.workerPool.terminate()
-    logger.debug('VUs ran.')
-
     logger.info(
       `scenario "${scenarioName}" successfully executed in ${
         scenarioEnd - scenarioStart
       }ms.`
     )
+
+    // Performance report.
+    const metricsPromises = await this.workerPool.forEachWorkerRemoteProcedureCall<never, Metrics>({
+      name: 'metrics',
+      args: []
+    })
+    if (metricsPromises.some((p) => p.status === 'rejected')) {
+      console.error('some metrics were lost, result may be innacurate')
+    }
+    const metrics = metricsPromises.reduce<Metrics[]>((acc, p) => {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      if (p.status === 'fulfilled') acc.push(p.value!)
+      return acc
+    }, [])
+
+    this.printPerformanceReport(
+      performanceReport(mergeMetrics(...metrics))
+    )
+
+    // Clean up.
+    this.workerPool.terminate()
   }
 
   override async scenarioProgress (): Promise<ScenarioProgress> {
