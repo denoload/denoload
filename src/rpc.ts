@@ -26,11 +26,11 @@ const logger = log.getLogger('main')
 let globalMsgId = 0
 
 // deno-lint-ignore no-explicit-any
-type ResponseHandler = (_: RpcResult<any>) => void
+export type ResponseHandler<T> = (_: RpcResult<T>) => void
 
 export class RpcWorker {
   private readonly worker: Worker
-  private readonly responseHandlers = new Map<number, ResponseHandler>()
+  private readonly responseHandlers = new Map<number, ResponseHandler<any>>()
 
   constructor (specifier: string | URL, options?: WorkerOptions | undefined) {
     this.worker = new Worker(specifier, options)
@@ -92,7 +92,7 @@ export class RpcWorker {
     })
   }
 
-  private addResponseHandler (id: number, handler: ResponseHandler): void {
+  private addResponseHandler (id: number, handler: ResponseHandler<any>): void {
     this.responseHandlers.set(id, handler)
   }
 
@@ -131,7 +131,7 @@ export function workerProcedureHandler (
       postMessage({
         id: event.data.id,
         result
-      }, [])
+      }, [result])
     } catch (err) {
       const errStr = (err as any)?.stack ?? (err as any).toString()
       logger.error(
