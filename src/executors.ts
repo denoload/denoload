@@ -59,7 +59,6 @@ abstract class Executor {
       const duration = new Date().getTime() - startTime.getTime()
       const percentage = Math.floor(progress.percentage)
 
-      // Deno.stdout.write(encoder.encode("\x1b[2A\x1b[K"));
       process.stdout.write(
         encoder.encode(
           `running (${
@@ -92,32 +91,6 @@ abstract class Executor {
       })
     }
   }
-
-  // async collectPerformanceMetrics(): Promise<
-  //   Record<string, PerformanceMetric>
-  // > {
-  //   // Collect metrics.
-  //   const metrics = await this.workerPool
-  //     .forEachWorkerRemoteProcedureCall<
-  //       never,
-  //       Record<string, PerformanceMetric>
-  //     >({
-  //       name: "collectPerformanceMetrics",
-  //       args: [],
-  //     }, { timeout: 1000 });
-  //
-  //   const result: Record<string, PerformanceMetric>[] = [];
-  //   for (const m of metrics) {
-  //     if (m.status === "rejected") {
-  //       logger.error(
-  //         "one or more workers metrics were lost, result may be innacurate:",
-  //         m.reason,
-  //       );
-  //     } else {
-  //       result.push(m.value!);
-  //     }
-  //   }
-  // }
 }
 
 /**
@@ -174,16 +147,20 @@ export class ExecutorPerVuIteration extends Executor {
   }
 
   override async scenarioProgress (): Promise<ScenarioProgress> {
-    // const stats = await fetchStats();
-    const stats = { iteration: { count: 0 } }
+    const promises = await this.workerPool.forEachWorkerRemoteProcedureCall<never, number>({
+      name: 'iterationsDone',
+      args: []
+    })
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const currentIterations = promises.reduce((acc, p) => p.status === 'fulfilled' ? acc + p.value! : acc, 0)
 
     return {
       scenarioName: this.scenarioName,
       currentVus: this.currentVus,
       maxVus: this.maxVus,
-      currentIterations: stats?.iteration?.count ?? 0,
+      currentIterations,
       maxIterations: this.totalIterations,
-      percentage: (stats?.iteration?.count ?? 0) / this.totalIterations * 100,
+      percentage: currentIterations / this.totalIterations * 100,
       extraInfos: ''
     }
   }

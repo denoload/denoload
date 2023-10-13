@@ -2,38 +2,63 @@
 // promises in exported function.
 /* eslint-disable @typescript-eslint/no-floating-promises */
 
-export enum IterationStatus {
-  Running = 0,
-  Done = 1,
-  Error = 2,
-}
-
-const iterationInfos: { status: IterationStatus, error: Error | null } = {
-  status: IterationStatus.Done,
-  error: null
+const metrics = {
+  iterations: [] as number[],
+  iterationsDone: 0,
+  iterationsFailed: 0
 }
 
 /**
  * Start a floating promise that perform a single VU iteration.
  */
-export function startIteration (moduleURL: string, vu: number, iter: number): void {
+export function doIterations (moduleURL: string, vu: number, nbIter: number): void {
+  alterGlobalThis()
   import(moduleURL).then(async (module) => {
-    iterationInfos.status = IterationStatus.Running
-    iterationInfos.error = null
+    for (let i = 0; i < nbIter; i++) {
+      try {
+        const start = Bun.nanoseconds()
+        await module.default(vu, i)
 
-    await module.default(vu, iter)
+        metrics.iterations.push(Bun.nanoseconds() - start)
+        metrics.iterationsDone++
+      } catch (err) {
+        console.error(err)
 
-    iterationInfos.status = IterationStatus.Done
-  }).catch((err) => {
-    iterationInfos.status = IterationStatus.Error
-    iterationInfos.error = err
-  })
+        metrics.iterationsFailed++
+        continue
+      }
+    }
+  }).finally(restoreGlobalThis)
 }
 
-export function iterationStatus (): IterationStatus {
-  return iterationInfos.status
+export function iterationsDone (): number {
+  return metrics.iterationsDone
 }
 
-export function iterationError (): string {
-  return iterationInfos.error?.stack ?? ''
+export function iterationsFailed (): number {
+  return metrics.iterationsFailed
+}
+
+export function iterationsTotal (): number {
+  return metrics.iterationsDone + metrics.iterationsFailed
+}
+
+const realGlobalThis = {
+  fetch: globalThis.fetch
+}
+
+function alterGlobalThis (): void {
+  globalThis.fetch = doFetch
+}
+
+function restoreGlobalThis (): void {
+  globalThis.fetch = realGlobalThis.fetch
+}
+
+function doFetch (input: string | URL | Request, init?: RequestInit): any {
+  // const start = Bun.nanoseconds()
+  const p = realGlobalThis.fetch(input, init)
+  // p.finally(() => metrics.fetch.push(['fetch', Bun.nanoseconds() - start]))
+
+  return p
 }
