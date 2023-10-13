@@ -18,21 +18,31 @@ standard and can not be. This can lead to a **lot** frustration.
 `denoload` aims to be an alternative with:
 - great performance (comparable to [k6][k6])
 - write [k6][k6] like scripts with VUs, iterations and executors
-- web APIs, you can use your client libraries.
+- standard web APIs support (e.g. [fetch](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API))
 - ESModules support
 - Modern JavaScript & TypeScript support out of the box (including `async` /
   `await`)
 
 This project is based on [Bun][bun].
 
+## Getting started
+
 ## Limitations
 
 Cookies are not supported.
 
+Executors:
+- [x] Per VU iterations
+- [ ] Shared iterations
+- [ ] Constant VUs
+- [ ] Ramping VUs
+- [ ] Constant Arrival Rate
+- [ ] Ramping Arrival Rate
+
 ## Why `denoload` ?
 
 The project was originally based on the [Deno](https://deno.land) runtime but I
-switched to [Bun][bun] for better performance and [isolation](https://github.com/tc39/proposal-shadowrealm/).
+switched to [Bun][bun] for VU [isolation using ShadowRealm](https://github.com/tc39/proposal-shadowrealm/).
 
 ## Contributing
 
