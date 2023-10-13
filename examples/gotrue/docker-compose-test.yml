@@ -1,0 +1,20 @@
+version: '3'
+services:
+  denoload:
+    image: "negrel/denoload:dev"
+    working_dir: /app
+    # entrypoint: sleep 1h
+    command: /app/main.ts
+    environment:
+      NODE_ENV: "DEBUG"
+    volumes:
+      - ./:/app/:ro
+    networks:
+      default: {}
+
+networks:
+  default:
+    # Share test network from docker-compose.env.yml
+    external: true
+    name: '${COMPOSE_PROJECT_NAME}_default'
+

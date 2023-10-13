@@ -1,0 +1,14 @@
+{
+  "name": "gotrue",
+  "module": "main.ts",
+  "type": "module",
+  "devDependencies": {
+    "bun-types": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "@supabase/gotrue-js": "^2.55.0"
+  }
+}

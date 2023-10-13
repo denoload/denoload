@@ -1,0 +1,56 @@
+version: '3'
+services:
+  gotrue:
+    image: "docker.io/supabase/gotrue:v2.99.0"
+    restart: always
+    ports:
+      - 80:80
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: wget --no-verbose --tries=1 --spider http://localhost:8001/health || exit 1
+      interval: 5s
+      timeout: 10s
+    environment:
+      GOTRUE_SITE_URL: "http://localhost"
+      GOTRUE_API_HOST: "0.0.0.0"
+      GOTRUE_JWT_SECRET: "secret4tests"
+      GOTRUE_DB_DRIVER: "postgres"
+      GOTRUE_MAILER_AUTOCONFIRM: "true"
+      DB_NAMESPACE: "auth"
+      API_EXTERNAL_URL: "http://gotrue.local"
+      PORT: 80
+      # Defined in flake.nix dev shell
+      DATABASE_URL: "postgres://supabase_auth_admin:root@postgres.local:5432/default"
+    networks:
+      default:
+        aliases:
+          - "gotrue.local"
+
+  postgres:
+    image: "docker.io/library/postgres:15"
+    command: "-N 1000"
+    # ports:
+    #   - 5432:5432
+    healthcheck:
+      test: /usr/bin/pg_isready
+      interval: 5s
+      timeout: 10s
+    user: "postgres:postgres"
+    environment:
+      DB_NAMESPACE: "auth"
+      # Defined in flake.nix dev shell
+      POSTGRES_USER: "postgres"
+      POSTGRES_PASSWORD: "password"
+      POSTGRES_DB: "default"
+    volumes:
+      - "./migrations/:/docker-entrypoint-initdb.d:ro"
+    networks:
+      default:
+        aliases:
+          - "postgres.local"
+
+networks:
+  default: {}
+
