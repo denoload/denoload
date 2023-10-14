@@ -35,6 +35,12 @@ export class RpcWorker {
   constructor (specifier: string | URL, options?: WorkerOptions | undefined) {
     this.worker = new Worker(specifier, options)
     this.worker.onmessage = this.onResponse.bind(this)
+    this.worker.onmessageerror = (ev) => {
+      console.error(ev)
+    }
+    this.worker.onerror = (ev) => {
+      throw new Error(ev.message)
+    }
   }
 
   terminate (): void {
@@ -68,7 +74,7 @@ export class RpcWorker {
     return await new Promise((resolve, reject) => {
       const timeoutId = setTimeout(() => {
         // eslint-disable-next-line prefer-promise-reject-errors
-        reject(`rpc ${msgId} timed out`)
+        reject(`rpc ${msgId} (${rpc.name}) timed out`)
       }, timeout)
 
       this.addResponseHandler(msgId, (data: RpcResult<R>) => {
