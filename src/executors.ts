@@ -1,7 +1,7 @@
+import * as metrics from '@negrel/denoload-metrics'
 import { ExecutorKind, type ScenarioOptions } from './datatypes.ts'
 import log from './log.ts'
-import { type Metrics, mergeMetrics, performanceReport, type PerformanceReport } from './metrics.ts'
-import { formatDuration } from './utils.ts'
+import { formatDuration, printMetrics } from './utils.ts'
 import { WorkerPool } from './worker_pool.ts'
 
 const logger = log.getLogger('main')
@@ -93,12 +93,6 @@ abstract class Executor {
       })
     }
   }
-
-  printPerformanceReport (report: PerformanceReport): void {
-    for (const [name, value] of Object.entries(report)) {
-      console.log(`${name}: total=${value.total} min=${formatDuration(value.min)}, max=${formatDuration(value.max)}, avg=${formatDuration(value.avg)}, p50=${formatDuration(value.p50)}, p95=${formatDuration(value.p95)}, p99=${formatDuration(value.p99)}`)
-    }
-  }
 }
 
 /**
@@ -141,28 +135,24 @@ export class ExecutorPerVuIteration extends Executor {
     // Stop console reported test is done.
     await this.stopConsoleReporter()
     logger.info(
-      `scenario "${scenarioName}" successfully executed in ${
-        scenarioEnd - scenarioStart
-      }ms.`
+      `scenario "${scenarioName}" successfully executed in ${formatDuration(scenarioEnd - scenarioStart)}.`
     )
 
-    // Performance report.
-    const metricsPromises = await this.workerPool.forEachWorkerRemoteProcedureCall<never, Metrics>({
+    // Collect metrics.
+    const metricsPromises = await this.workerPool.forEachWorkerRemoteProcedureCall<never, metrics.RegistryObj>({
       name: 'metrics',
       args: []
     })
     if (metricsPromises.some((p) => p.status === 'rejected')) {
-      console.error('some metrics were lost, result may be innacurate')
+      logger.error('some metrics were lost, result may be innacurate')
     }
-    const metrics = metricsPromises.reduce<Metrics[]>((acc, p) => {
+    const vuMetrics = metricsPromises.reduce<metrics.RegistryObj[]>((acc, p) => {
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       if (p.status === 'fulfilled') acc.push(p.value!)
       return acc
     }, [])
 
-    this.printPerformanceReport(
-      performanceReport(mergeMetrics(...metrics))
-    )
+    printMetrics(metrics.mergeRegistryObjects(...vuMetrics))
 
     // Clean up.
     this.workerPool.terminate()

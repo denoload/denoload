@@ -126,13 +126,15 @@ export class WorkerPool {
       }
     )
 
-    const index = this.workers.push(worker) - 1
-    this.runningTasks.push(new Set())
+    const index = this.workers.length
 
     void worker.remoteProcedureCall({
       name: 'setupWorker',
-      args: [index]
+      args: [this.workers.length]
     })
+
+    this.runningTasks.push(new Set())
+    this.workers.push(worker)
 
     return [worker, index]
   }

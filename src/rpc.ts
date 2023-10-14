@@ -118,7 +118,7 @@ export function workerProcedureHandler (
 
   // deno-lint-ignore no-explicit-any
   return async (event: MessageEvent<RPC<any>>): Promise<void> => {
-    logger.debug(() =>
+    logger.debug(
       `rpc ${event.data.id} received: ${JSON.stringify(event.data)}`
     )
 
@@ -130,7 +130,7 @@ export function workerProcedureHandler (
 
       const result = await procedure(...event.data.args)
 
-      logger.debug(() =>
+      logger.debug(
         `rpc ${event.data.id} done: ${JSON.stringify(result)}`
       )
 

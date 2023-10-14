@@ -1,10 +1,11 @@
-import { type Metrics } from './metrics.ts'
+import type * as metrics from '@negrel/denoload-metrics'
 
 export class VU {
   private readonly realm: ShadowRealm
   private readonly pollIntervalMillis: number
   private readonly id: number
   private _iterations = 0
+  private jsonMetrics?: () => string
 
   constructor (id: number, pollIntervalMillis: number) {
     this.realm = new ShadowRealm()
@@ -16,14 +17,15 @@ export class VU {
     return this._iterations
   }
 
-  async metrics (): Promise<Metrics> {
-    const jsonMetrics: () => string = await this.realm.importValue('./vu_shadow_realm.ts', 'jsonMetrics')
-    return JSON.parse(jsonMetrics()) as Metrics
+  metrics (): metrics.RegistryObj {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    return JSON.parse(this.jsonMetrics!()) as metrics.RegistryObj
   }
 
   async doIterations (moduleUrl: string, iterations: number): Promise<void> {
     const doIterations = await this.realm.importValue('./vu_shadow_realm.ts', 'doIterations')
     const iterationsTotal: () => number = await this.realm.importValue('./vu_shadow_realm.ts', 'iterationsTotal')
+    this.jsonMetrics = await this.realm.importValue('./vu_shadow_realm.ts', 'jsonMetricsRegistry')
 
     // Start iterations
     void doIterations(moduleUrl, this.id, iterations)

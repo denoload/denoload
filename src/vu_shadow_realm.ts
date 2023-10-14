@@ -2,14 +2,11 @@
 // promises in exported function.
 /* eslint-disable @typescript-eslint/no-floating-promises */
 
-import { type Metrics } from './metrics.ts'
+import { globalRegistry } from '@negrel/denoload-metrics'
 
-const metrics: Metrics = {
-  fetch: [],
-  iterations: [],
-  iterationsDone: 0,
-  iterationsFailed: 0
-}
+const iterationsTrend = globalRegistry.Trend('iterations')
+const fetchTrend = globalRegistry.Trend('fetch')
+let rawIterationsCounter = 0
 
 /**
  * Start a floating promise that perform a single VU iteration.
@@ -18,36 +15,29 @@ export function doIterations (moduleURL: string, vu: number, nbIter: number): vo
   alterGlobalThis()
   import(moduleURL).then(async (module) => {
     for (let i = 0; i < nbIter; i++) {
+      const start = Bun.nanoseconds()
+
       try {
-        const start = Bun.nanoseconds()
         await module.default(vu, i)
 
-        metrics.iterations.push(Bun.nanoseconds() - start)
-        metrics.iterationsDone++
+        iterationsTrend.add(Bun.nanoseconds() - start, 'success')
       } catch (err) {
         console.error(err)
 
-        metrics.iterationsFailed++
-        continue
+        iterationsTrend.add(Bun.nanoseconds() - start, 'fail')
       }
+
+      rawIterationsCounter++
     }
   }).finally(restoreGlobalThis)
 }
 
-export function iterationsDone (): number {
-  return metrics.iterationsDone
-}
-
-export function iterationsFailed (): number {
-  return metrics.iterationsFailed
-}
-
 export function iterationsTotal (): number {
-  return metrics.iterationsDone + metrics.iterationsFailed
+  return rawIterationsCounter
 }
 
-export function jsonMetrics (): string {
-  return JSON.stringify(metrics)
+export function jsonMetricsRegistry (): string {
+  return JSON.stringify(globalRegistry)
 }
 
 const realGlobalThis = {
@@ -65,7 +55,11 @@ function restoreGlobalThis (): void {
 function doFetch (input: string | URL | Request, init?: RequestInit): any {
   const start = Bun.nanoseconds()
   const p = realGlobalThis.fetch(input, init)
-  p.then(() => metrics.fetch.push(Bun.nanoseconds() - start))
+  p.then((response) => {
+    fetchTrend.add(Bun.nanoseconds() - start, response.statusText)
+  }).catch((_error) => {
+    fetchTrend.add(Bun.nanoseconds() - start, 'fail')
+  })
 
   return p
 }

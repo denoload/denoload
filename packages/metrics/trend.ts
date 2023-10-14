@@ -1,65 +1,15 @@
-export interface Metrics {
-  fetch: number[]
-  iterations: number[]
-  iterationsDone: number
-  iterationsFailed: number
-}
-
-export function mergeMetrics (...metrics: Metrics[]): Metrics {
-  const result: Metrics = {
-    fetch: [],
-    iterations: [],
-    iterationsDone: 0,
-    iterationsFailed: 0
-  }
-
-  for (const m of metrics) {
-    result.fetch.push(...m.fetch)
-    result.iterations.push(...m.iterations)
-    result.iterationsDone += m.iterationsDone
-    result.iterationsFailed += m.iterationsFailed
-  }
-
-  return result
-}
-
-export interface PerformanceMetric {
+export interface Trend {
   min: number
   max: number
   avg: number
-  total: number
-  p99: number
-  p95: number
-  p90: number
-  p50: number
+  percentiles: number[]
 }
 
-export interface PerformanceReport {
-  fetch: PerformanceMetric
-  iterations: PerformanceMetric
-}
-
-export function performanceReport (metrics: Metrics): PerformanceReport {
-  return {
-    fetch: singleMetricReport(metrics.fetch),
-    iterations: singleMetricReport(metrics.iterations)
-  }
-}
-
-function singleMetricReport (data: number[]): PerformanceMetric {
+export function trend (data: number[], percentiles: number[]): Trend {
   const [min, max, avg] = calculateMinMaxAvg(data)
-  const [p99, p95, p90, p50] = calculatePercentiles(data, [99, 95, 90, 50])
+  const p = calculatePercentiles(data, percentiles.sort((a, b) => b - a))
 
-  return {
-    min,
-    max,
-    avg,
-    total: data.length,
-    p99,
-    p95,
-    p90,
-    p50
-  }
+  return { min, max, avg, percentiles: p }
 }
 
 function calculateMinMaxAvg (data: number[]): [number, number, number] {
@@ -88,10 +38,14 @@ function calculateMinMaxAvg (data: number[]): [number, number, number] {
 }
 
 function calculatePercentiles (data: number[], percentiles: number[]): number[] {
+  if (data.length === 0) {
+    return percentiles.map(() => 0)
+  }
+
   // Sort the data in ascending order
   data.sort((a, b) => a - b)
 
-  const results = []
+  const results: number[] = []
   for (const percentile of percentiles) {
     const index = (percentile / 100) * (data.length - 1)
     if (index % 1 === 0) {

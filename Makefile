@@ -4,10 +4,10 @@ test:
 	bun test
 
 lint:
-	bunx eslint src/
+	bunx eslint src/ packages/
 
 lint/fix:
-	bunx eslint --fix src/
+	bunx eslint --fix src/ packages/
 
 check:
 	bunx tsc

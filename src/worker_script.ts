@@ -1,5 +1,6 @@
+import * as metrics from '@negrel/denoload-metrics'
+
 import * as log from './log.ts'
-import { mergeMetrics, type Metrics } from './metrics.ts'
 import { workerProcedureHandler } from './rpc.ts'
 import { VU } from './vu.ts'
 
@@ -29,7 +30,7 @@ self.onmessage = workerProcedureHandler({
 
     return total
   },
-  async metrics (): Promise<Metrics> {
-    return mergeMetrics(...await Promise.all(VUs.map(async (v) => await v.metrics())))
+  metrics (): metrics.RegistryObj {
+    return metrics.mergeRegistryObjects(...VUs.map((v) => v.metrics()))
   }
 }, self.postMessage)
