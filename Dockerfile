@@ -4,9 +4,7 @@ WORKDIR /denoload
 
 COPY . .
 
-RUN \
-  --mount=type=cache,target=node_modules \
-  bun install
+RUN bun install
 
 WORKDIR /tests
 
