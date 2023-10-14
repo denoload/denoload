@@ -58,6 +58,8 @@ export default async function (): Promise<void> {
 }
 ```
 
+See [examples/gotrue](./examples/gotrue/) to run the script locally.
+
 ## TODOs
 
 Executors:

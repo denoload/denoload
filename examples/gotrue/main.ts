@@ -1,4 +1,5 @@
 import { GoTrueClient } from '@supabase/gotrue-js'
+import * as random from './random.ts'
 
 export const options = {
   scenarios: {
@@ -12,19 +13,11 @@ export const options = {
 
 const AuthClient = new GoTrueClient({ url: 'http://gotrue.local' })
 
-function randomEmail (): string {
-  return ''
-}
-
-function randomPassword (): string {
-  return ''
-}
-
 export default async function (): Promise<void> {
   // Sign up and sign in.
   await AuthClient.signUp({
-    email: randomEmail(),
-    password: randomPassword()
+    email: random.email(),
+    password: random.password()
   })
 
   await Bun.sleep(1000)

@@ -1,3 +1,19 @@
-# gotrue
+# Load testing of [GoTrue][gotrue]
 
-This project was created using `bun init` in bun v1.0.4. [Bun](https://bun.sh) is a fast all-in-one JavaScript runtime.
+This directory contains an example load test of [GoTrue][gotrue]. Follow the 
+instructions to run it locally.
+
+## Getting started
+
+Start the test environment:
+
+```sh
+docker compose -f ./docker-compose-env.yml up -d
+```
+
+Start the denoload instance:
+```sh
+docker compose -f ./docker-compose-test.yml up
+```
+
+[gotrue]: https://github.com/supabase/gotrue
