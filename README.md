@@ -1,5 +1,7 @@
 # 🦕 `denoload` - Accelerate web API load testing with seamless client library integration.
 
+![denoload ascii art](./.github/images/ascii.png)
+
 `denoload` is a versatile load testing tool engineered to simplify the load
 testing of web services and similar backend components. It seamlessly integrate
 with client libraries, empowering developers to create robust load tests in just
