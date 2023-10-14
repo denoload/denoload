@@ -1,6 +1,7 @@
 *
 
 !src/*.ts
+!src/*.js
 !package.json
 !bun.lockb
 !tsconfig.json
