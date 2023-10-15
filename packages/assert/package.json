@@ -1,0 +1,11 @@
+{
+  "name": "@negrel/denoload-assert",
+  "module": "mod.ts",
+  "type": "module",
+  "devDependencies": {
+    "bun-types": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  }
+}

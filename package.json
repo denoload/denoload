@@ -4,7 +4,8 @@
 	"type": "module",
 	"dependencies": {
 		"bunyan": "^1.8.15",
-		"@negrel/denoload-metrics": "file://./packages/metrics"
+		"@negrel/denoload-metrics": "file://./packages/metrics",
+		"@negrel/denoload-assert": "file://./packages/assert"
 	},
 	"devDependencies": {
 		"@types/bunyan": "^1.8.9",
