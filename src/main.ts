@@ -21,12 +21,12 @@ async function loadOptions (moduleURL: URL): Promise<Options> {
 
 function printAsciiArt (): void {
   const dino = [
-    '                __  ',
-    '               / _) ',
-    '      _.----._/ /   ',
-    '     /         /    ',
-    '  __/ (  | (  |     ',
-    " /__.-'|_|--|_|     "
+    '                  __  ',
+    '           --    / _) ',
+    '---  -- _.----._/ /   ',
+    '  ---  /   --    /    ',
+    '--- __/ (  | (  |     ',
+    "   /__.-'|_|--|_|     "
   ]
   const denoload = [
     ' ___                   _                _ ',
