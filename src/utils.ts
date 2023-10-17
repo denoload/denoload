@@ -35,7 +35,7 @@ export function formatDuration (nanoseconds: number): string {
   const milliseconds = Math.floor(microseconds / 1000)
   const seconds = Math.floor(milliseconds / 1000)
 
-  let result = `${microseconds.toFixed(3)}μs`
+  let result = `${microseconds}μs`
   if (milliseconds > 1) {
     result = `${Math.floor(milliseconds)}.${Math.round(microseconds % 1000)}ms`
   }
