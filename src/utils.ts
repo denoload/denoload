@@ -9,7 +9,7 @@ export function printMetrics (m: metrics.RegistryObj): void {
 
     for (const [tagName, tag] of Object.entries(trendObj)) {
       if (tagName === '_') continue
-      console.log(`      ${pad(tagName, '.', 20)}: ${formatTrendTag(tag)} total=${trendObj._.length}`)
+      console.log(`      ${pad(tagName, '.', 20)}: ${formatTrendTag(tag)} total=${tag.length}`)
     }
   }
 
