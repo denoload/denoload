@@ -1,11 +1,22 @@
 {
-  "name": "@negrel/denoload-assert",
-  "module": "mod.ts",
-  "type": "module",
-  "devDependencies": {
-    "bun-types": "latest"
-  },
-  "peerDependencies": {
-    "typescript": "^5.0.0"
-  }
+	"name": "@negrel/denoload-assert",
+	"version": "v0.1.0",
+	"main": "./mod.ts",
+	"type": "module",
+	"module": "mod.ts",
+	"description": "Fork of assert module from deno_std for denoload.",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/negrel/denoload.git"
+	},
+	"bugs": {
+		"url": "https://github.com/negrel/denoload/issues"
+	},
+	"license": "MIT",
+	"devDependencies": {
+		"bun-types": "latest"
+	},
+	"peerDependencies": {
+		"typescript": "^5.0.0"
+	}
 }
