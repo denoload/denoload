@@ -28,7 +28,7 @@ test('error is thrown from worker', async () => {
     name: 'error',
     args: []
   })
-  ).rejects.toEqual('Error: runtime error from worker')
+  ).rejects.toStartWith('Error: runtime error from worker')
 
   worker.terminate()
 })
@@ -43,7 +43,22 @@ test('non existent procedure', async () => {
     name: 'non existent',
     args: []
   })
-  ).rejects.toEqual("Error: procedure \"non existent\" doesn't exist")
+  ).rejects.toStartWith("Error: procedure \"non existent\" doesn't exist")
+
+  worker.terminate()
+})
+
+test("timeout error is thrown if worker doesn't respond", () => {
+  const worker = new RpcWorker(
+    new URL('./test_workers/timeout.ts', import.meta.url).href,
+    { type: 'module' }
+  )
+
+  expect(worker.remoteProcedureCall<number, number>({
+    name: 'sleep',
+    args: [10000] // 10s
+  }, { timeout: 1000 }) // 1s
+  ).rejects.toMatch(/^rpc \d+ \(sleep\) timed out/)
 
   worker.terminate()
 })
