@@ -8,7 +8,7 @@ declare const self: Worker
 
 let logger = log.getLogger('worker/-1')
 
-const VUs = [] as VU[]
+const VUs: Record<string, VU[]> = {}
 
 self.onmessage = workerProcedureHandler({
   // NOTE: setupWorker MUST NOT be async.
@@ -16,21 +16,28 @@ self.onmessage = workerProcedureHandler({
     logger = log.getLogger(`worker/${workerId}`)
     logger.info('worker ready')
   },
-  async iterations (moduleURL: string, nbIter: number, vuId: number, pollIntervalMillis: number): Promise<void> {
+  async iterations (moduleURL: string, scenarioName: string, nbIter: number, vuId: number, pollIntervalMillis: number): Promise<void> {
     const vu = new VU(vuId, pollIntervalMillis)
-    VUs.push(vu)
+    if (VUs[scenarioName] === undefined) VUs[scenarioName] = []
+    VUs[scenarioName].push(vu)
 
     await vu.doIterations(moduleURL, nbIter)
   },
-  iterationsDone (): number {
-    let total = 0
-    for (let i = 0; i < VUs.length; i++) {
-      total += VUs[i].iterations
+  iterationsDone (): Record<string, number> {
+    const iterationsDone: Record<string, number> = {}
+    for (const scenario in VUs) {
+      const vus = VUs[scenario]
+      let total = 0
+      for (let i = 0; i < vus.length; i++) {
+        total += vus[i].iterations
+      }
+
+      iterationsDone[scenario] = total
     }
 
-    return total
+    return iterationsDone
   },
   metrics (): metrics.RegistryObj {
-    return metrics.mergeRegistryObjects(...VUs.map((v) => v.metrics()))
+    return metrics.mergeRegistryObjects(...Object.values(VUs).flat().map((v) => v.metrics()))
   }
 }, self.postMessage)

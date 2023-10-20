@@ -13,7 +13,7 @@ export function printMetrics (m: metrics.RegistryObj): void {
     }
   }
 
-  console.log('\n')
+  console.log('\n\n\n')
 }
 
 function formatTrendTag (trend: number[]): string {
@@ -47,6 +47,10 @@ export function formatDuration (nanoseconds: number): string {
   return result
 }
 
-function pad (str: string, p: string, size: number): string {
+export function padLeft (str: string, p: string, size: number): string {
+  return `${p.repeat(Math.max(size - str.length, 0))}${str}`
+}
+
+export function pad (str: string, p: string, size: number): string {
   return `${str}${p.repeat(Math.max(size - str.length, 0))}`
 }

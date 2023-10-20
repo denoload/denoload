@@ -1,5 +1,7 @@
 import * as bunyan from 'bunyan'
-import type Logger from 'bunyan'
+import Logger from 'bunyan'
+
+export { Logger }
 
 const level = process.env.NODE_ENV === 'production'
   ? 'warn'
@@ -14,5 +16,6 @@ export function getLogger (name: string): Logger {
 }
 
 export default {
-  getLogger
+  getLogger,
+  Logger
 }

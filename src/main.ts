@@ -1,26 +1,11 @@
 import { program } from 'commander'
 
 import { type Options } from './datatypes.ts'
-import executors from './executors.ts'
 import * as log from './log.ts'
 import { VERSION } from './version.ts'
+import { run } from './runner.ts'
 
 const logger = log.getLogger('main')
-
-/**
- * Load a module and its exported options.
- *
- * @param moduleURL - URL of the module to load.
- * @returns Options exported by the module.
- *
- * @throws {@link TypeError}
- * This exception is thrown if the module can't bet imported.
- */
-async function loadOptions (moduleURL: URL): Promise<Options> {
-  const module = await import(moduleURL.toString())
-  // TODO(@negrel): validate options object before returning it.
-  return module.options
-}
 
 function printAsciiArt (): void {
   const dino = [
@@ -66,19 +51,7 @@ void (async () => {
     .argument('<file_path>', 'path to test file')
     .action(async (testfile) => {
       const moduleURL = new URL(testfile, 'file://' + process.cwd() + '/')
-
-      logger.debug(`loading options of module "${moduleURL.toString()}"...`)
-      const moduleOptions = await loadOptions(moduleURL)
-      logger.debug('loaded options', moduleOptions)
-
-      for (
-        const [scenarioName, scenarioOptions] of Object.entries(moduleOptions.scenarios)
-      ) {
-        const executor = new executors[scenarioOptions.executor]()
-        await executor.execute(moduleURL, scenarioName, scenarioOptions)
-      }
-
-      logger.info('scenarios successfully executed, exiting...')
+      await run(moduleURL)
     })
   program.parse()
 })()

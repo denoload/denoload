@@ -1,20 +1,27 @@
-import * as metrics from '@negrel/denoload-metrics'
-import { ExecutorKind, type ScenarioOptions } from './datatypes.ts'
-import log from './log.ts'
-import { formatDuration, printMetrics } from './utils.ts'
-import { WorkerPool } from './worker_pool.ts'
+import * as log from './log.ts'
+import { formatDuration } from './utils.ts'
+import { type WorkerPool } from './worker_pool.ts'
 
-const logger = log.getLogger('main')
-const encoder = new TextEncoder()
-
-interface ScenarioProgress {
-  scenarioName: string
-  currentVus: number
-  maxVus: number
-  currentIterations: number
-  maxIterations: number
+export interface ScenarioProgress {
   percentage: number
   extraInfos: string
+}
+
+/**
+ * Enumeration of available executors.
+ */
+export enum ExecutorKind {
+  // A fixed amount of iteration per VU
+  PerVuIteration = 'per-vu-iterations',
+}
+
+/**
+ * ScenarioOptions defines options of a scenario exported by a test script.
+ */
+export interface ScenarioOptions {
+  executor: ExecutorKind
+  vus: number
+  iterations: number
 }
 
 /**
@@ -24,10 +31,14 @@ interface ScenarioProgress {
  * This is the abstract base class that handle common tasks such as initializing
  * the worker pool.
  */
-abstract class Executor {
-  protected readonly workerPool: WorkerPool = new WorkerPool()
-  private consoleReporterIntervalId: NodeJS.Timeout | null = null
-  private consoleReporterCb = (): void => {}
+export abstract class Executor {
+  protected readonly workerPool: WorkerPool
+  public readonly scenarioName: string
+
+  constructor (workerPool: WorkerPool, scenarioName: string) {
+    this.workerPool = workerPool
+    this.scenarioName = scenarioName
+  }
 
   /**
    * Execute is the core logic of an executor.
@@ -37,142 +48,85 @@ abstract class Executor {
    * @param scenarioName - Name of the scenario.
    * @param scenarioOptions - Options of the scenario to run.
    */
-  abstract execute (
-    moduleURL: URL,
-    scenarioName: string,
-    scenarioOptions: ScenarioOptions,
-  ): Promise<void>
+  abstract execute (): Promise<void>
 
-  abstract scenarioProgress (): Promise<ScenarioProgress>
+  /**
+   * maxVUs returns the total number of VUs used in this run.
+   */
+  abstract maxVUs (): number
 
-  startConsoleReporter (): void {
-    if (this.consoleReporterIntervalId !== null) {
-      return
-    }
+  /**
+   * currentVUs returns the current number of VUs.
+   */
+  abstract currentVUs (): number
 
-    const startTime = new Date()
-    const progressBarEmptyChar =
-      '--------------------------------------------------'
-    const progressBarFullChar =
-      '=================================================='
-
-    this.consoleReporterIntervalId = setInterval(async () => {
-      const progress = await this.scenarioProgress()
-      const duration = new Date().getTime() - startTime.getTime()
-      const percentage = Math.floor(progress.percentage)
-
-      process.stdout.write(
-        encoder.encode(
-          `running (${
-            Math.round(duration / 1000)
-          }s), ${progress.currentVus}/${progress.maxVus} VUs, ${progress.currentIterations}/${progress.maxIterations} iterations.\n`
-        )
-      )
-      process.stdout.write(
-        encoder.encode(
-          `${progress.scenarioName} [${
-            progressBarFullChar.slice(0, Math.floor(percentage / 2))
-          }${
-            progressBarEmptyChar.slice(0, 50 - Math.floor(percentage / 2))
-          }]\n`
-        )
-      )
-
-      this.consoleReporterCb()
-    }, 1000)
-  }
-
-  stopConsoleReporter (): Promise<void> | void {
-    if (this.consoleReporterIntervalId !== null) {
-      return new Promise((resolve) => {
-        this.consoleReporterCb = () => {
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          clearInterval(this.consoleReporterIntervalId!)
-          resolve(undefined)
-        }
-      })
-    }
-  }
+  /**
+   * Compute progress percentage.
+   */
+  abstract scenarioProgress (
+    { startTime, iterationsDone }: { startTime: number, iterationsDone: number }
+  ): ScenarioProgress
 }
 
 /**
  * Per VU iteration executor managed a fixed amount of iteration per VU.
  */
 export class ExecutorPerVuIteration extends Executor {
-  private scenarioName = ''
-  private currentVus = 0
-  private maxVus = 0
+  private readonly logger = log.getLogger('executor-per-vu-iteration')
+  private readonly moduleURL: URL
+  private readonly options: ScenarioOptions
+
+  private _currentVUs = 0
   private totalIterations = 0
 
-  override async execute (
-    moduleURL: URL,
-    scenarioName: string,
-    scenarioOptions: ScenarioOptions
-  ): Promise<void> {
-    logger.info(`executing "${scenarioName}" scenario...`)
-    this.maxVus = scenarioOptions.vus
-    this.totalIterations = scenarioOptions.iterations * this.maxVus
-    this.scenarioName = scenarioName
+  constructor (workerPool: WorkerPool, scenarioName: string, moduleURL: URL, options: ScenarioOptions) {
+    super(workerPool, scenarioName)
+    this.moduleURL = moduleURL
+    this.options = options
+  }
 
-    this.startConsoleReporter()
+  override async execute (): Promise<void> {
+    this.logger.info(`executing "${this.scenarioName}" scenario...`)
+    this.totalIterations = this.options.iterations * this.options.vus
 
-    logger.debug('running VUs...')
+    this.logger.debug('running VUs...')
     const scenarioStart = Bun.nanoseconds()
-    const promises = new Array(scenarioOptions.vus)
-    for (let vus = 0; vus < scenarioOptions.vus; vus++) {
+    const promises = new Array(this.options.vus)
+    for (let vus = 0; vus < this.options.vus; vus++) {
       promises[vus] = this.workerPool.remoteProcedureCall({
         name: 'iterations',
-        args: [moduleURL.toString(), scenarioOptions.iterations, vus, 10]
+        args: [this.moduleURL.toString(), this.scenarioName, this.options.iterations, vus, 10]
       })
-      this.currentVus++
+      this._currentVUs++
     }
 
     // Wait end of all iterations.
     await Promise.all(promises)
-    logger.debug('VUs ran.')
+    this.logger.debug('VUs ran.')
     const scenarioEnd = Bun.nanoseconds()
 
     // Stop console reported test is done.
-    await this.stopConsoleReporter()
-    logger.info(
-      `scenario "${scenarioName}" successfully executed in ${formatDuration(scenarioEnd - scenarioStart)}.`
+    this.logger.info(
+      `scenario successfully executed in ${formatDuration(scenarioEnd - scenarioStart)}.`
     )
 
-    // Collect metrics.
-    const metricsPromises = await this.workerPool.forEachWorkerRemoteProcedureCall<never, metrics.RegistryObj>({
-      name: 'metrics',
-      args: []
-    })
-    if (metricsPromises.some((p) => p.status === 'rejected')) {
-      logger.error('some metrics were lost, result may be innacurate')
-    }
-    const vuMetrics = metricsPromises.reduce<metrics.RegistryObj[]>((acc, p) => {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      if (p.status === 'fulfilled') acc.push(p.value!)
-      return acc
-    }, [])
-
-    printMetrics(metrics.mergeRegistryObjects(...vuMetrics))
-
     // Clean up.
-    this.workerPool.terminate()
+    // this.workerPool.terminate()
   }
 
-  override async scenarioProgress (): Promise<ScenarioProgress> {
-    const promises = await this.workerPool.forEachWorkerRemoteProcedureCall<never, number>({
-      name: 'iterationsDone',
-      args: []
-    })
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const currentIterations = promises.reduce((acc, p) => p.status === 'fulfilled' ? acc + p.value! : acc, 0)
+  override currentVUs (): number {
+    return this._currentVUs
+  }
 
+  override maxVUs (): number {
+    return this.options.vus
+  }
+
+  override scenarioProgress (
+    { iterationsDone }: { startTime: number, iterationsDone: number }
+  ): ScenarioProgress {
     return {
-      scenarioName: this.scenarioName,
-      currentVus: this.currentVus,
-      maxVus: this.maxVus,
-      currentIterations,
-      maxIterations: this.totalIterations,
-      percentage: currentIterations / this.totalIterations * 100,
+      percentage: iterationsDone / this.totalIterations * 100,
       extraInfos: ''
     }
   }
@@ -181,7 +135,14 @@ export class ExecutorPerVuIteration extends Executor {
 /**
  * Map of executors.
  */
-const executors: { [key in ExecutorKind]: new () => Executor } = {
+const executors: {
+  [key in ExecutorKind]: new (
+    workerPool: WorkerPool,
+    scenarioName: string,
+    moduleURL: URL,
+    scenarioOptions: ScenarioOptions
+  ) => Executor
+} = {
   [ExecutorKind.PerVuIteration]: ExecutorPerVuIteration
 }
 
