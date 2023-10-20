@@ -1,6 +1,9 @@
+import { program } from 'commander'
+
 import { type Options } from './datatypes.ts'
 import executors from './executors.ts'
 import * as log from './log.ts'
+import { VERSION } from './version.ts'
 
 const logger = log.getLogger('main')
 
@@ -24,7 +27,7 @@ function printAsciiArt (): void {
     '                  __  ',
     '           --    / _) ',
     '---  -- _.----._/ /   ',
-    '  ---  /   --    /    ',
+    '  ---  /         /    ',
     '--- __/ (  | (  |     ',
     "   /__.-'|_|--|_|     "
   ]
@@ -52,27 +55,30 @@ process.on('SIGINT', () => {
 
 void (async () => {
   printAsciiArt()
-  const moduleURL = (() => {
-    logger.debug('CLI arguments', Bun.argv)
 
-    if (Bun.argv.length < 3) {
-      logger.error('modules URL missing')
-      process.exit(1)
-    }
+  program
+    .name('denoload')
+    .description('Modern load testing tool using JavaScript and TypeScript, inspired by k6.')
+    .version(VERSION)
 
-    return new URL(Bun.argv[2], 'file://' + process.cwd() + '/')
-  })()
+  program.command('run')
+    .description('Start a test')
+    .argument('<file_path>', 'path to test file')
+    .action(async (testfile) => {
+      const moduleURL = new URL(testfile, 'file://' + process.cwd() + '/')
 
-  logger.debug(`loading options of module "${moduleURL.toString()}"...`)
-  const options = await loadOptions(moduleURL)
-  logger.debug('loaded options', options)
+      logger.debug(`loading options of module "${moduleURL.toString()}"...`)
+      const moduleOptions = await loadOptions(moduleURL)
+      logger.debug('loaded options', moduleOptions)
 
-  for (
-    const [scenarioName, scenarioOptions] of Object.entries(options.scenarios)
-  ) {
-    const executor = new executors[scenarioOptions.executor]()
-    await executor.execute(moduleURL, scenarioName, scenarioOptions)
-  }
+      for (
+        const [scenarioName, scenarioOptions] of Object.entries(moduleOptions.scenarios)
+      ) {
+        const executor = new executors[scenarioOptions.executor]()
+        await executor.execute(moduleURL, scenarioName, scenarioOptions)
+      }
 
-  logger.info('scenarios successfully executed, exiting...')
+      logger.info('scenarios successfully executed, exiting...')
+    })
+  program.parse()
 })()
