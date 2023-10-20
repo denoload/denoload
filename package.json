@@ -3,9 +3,10 @@
 	"module": "src/main.ts",
 	"type": "module",
 	"dependencies": {
-		"bunyan": "^1.8.15",
+		"@negrel/denoload-assert": "file://./packages/assert",
 		"@negrel/denoload-metrics": "file://./packages/metrics",
-		"@negrel/denoload-assert": "file://./packages/assert"
+		"bunyan": "^1.8.15",
+		"commander": "^11.1.0"
 	},
 	"devDependencies": {
 		"@types/bunyan": "^1.8.9",
