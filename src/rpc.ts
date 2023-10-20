@@ -65,8 +65,8 @@ export class RpcWorker {
     options: Partial<RpcOptions> = {}
   ): Promise<R | undefined> {
     const { timeout, transfer } = {
-      ...options,
-      ...defaultRpcOptions
+      ...defaultRpcOptions,
+      ...options
     }
 
     const msgId = globalMsgId++
