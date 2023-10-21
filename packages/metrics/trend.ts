@@ -7,7 +7,7 @@ export interface Trend {
 
 export function trend (data: number[], percentiles: number[]): Trend {
   const [min, max, avg] = calculateMinMaxAvg(data)
-  const p = calculatePercentiles(data, percentiles.sort((a, b) => b - a))
+  const p = calculatePercentiles(data, percentiles.sort((a, b) => a - b))
 
   return { min, max, avg, percentiles: p }
 }
