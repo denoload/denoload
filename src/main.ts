@@ -1,6 +1,5 @@
 import { program } from 'commander'
 
-import { type Options } from './datatypes.ts'
 import * as log from './log.ts'
 import { VERSION } from './version.ts'
 import { run } from './runner.ts'
