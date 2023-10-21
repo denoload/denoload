@@ -1,0 +1,34 @@
+name: push
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  pipeline:
+    if: "! contains(github.ref, 'refs/tags/')"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      - uses: cachix/install-nix-action@v21
+        with:
+          extra_nix_config: "system-features = benchmark big-parallel nixos-test uid-range kvm"
+      - name: Type check
+        run: nix develop --command make check
+      - name: Lint
+        run: nix develop --command make lint
+      - name: Unit tests
+        run: nix develop --command make test
+      - name: Docker build
+        run: IMAGE_TAR=./result nix develop --command make docker/build
+      - name: Store docker image as artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: docker-image
+          path: ./result
+          if-no-files-found: error
+
