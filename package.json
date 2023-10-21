@@ -1,24 +1,23 @@
 {
-	"name": "denoload",
-	"module": "src/main.ts",
-	"type": "module",
-	"dependencies": {
-		"@negrel/denoload-assert": "file://./packages/assert",
-		"@negrel/denoload-metrics": "file://./packages/metrics",
-		"bunyan": "^1.8.15",
-		"commander": "^11.1.0"
-	},
-	"devDependencies": {
-		"@types/bunyan": "^1.8.9",
-		"@typescript-eslint/eslint-plugin": "^6.4.0",
-		"bun-types": "^1.0.5",
-		"eslint": "^8.0.1",
-		"eslint-config-standard-with-typescript": "latest",
-		"eslint-plugin-import": "^2.25.2",
-		"eslint-plugin-n": "^15.0.0",
-		"eslint-plugin-promise": "^6.0.0"
-	},
-	"peerDependencies": {
-		"typescript": "^5.0.0"
-	}
+  "name": "denoload",
+  "module": "src/main.ts",
+  "type": "module",
+  "dependencies": {
+    "@negrel/denoload-metrics": "file://./packages/metrics",
+    "bunyan": "^1.8.15",
+    "commander": "^11.1.0"
+  },
+  "devDependencies": {
+    "@types/bunyan": "^1.8.9",
+    "@typescript-eslint/eslint-plugin": "^6.4.0",
+    "bun-types": "^1.0.5",
+    "eslint": "^8.0.1",
+    "eslint-config-standard-with-typescript": "latest",
+    "eslint-plugin-import": "^2.25.2",
+    "eslint-plugin-n": "^15.0.0",
+    "eslint-plugin-promise": "^6.0.0"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  }
 }
