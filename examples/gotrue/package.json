@@ -9,6 +9,9 @@
     "typescript": "^5.0.0"
   },
   "dependencies": {
-    "@supabase/gotrue-js": "^2.55.0"
+    "@faker-js/faker": "^8.2.0",
+    "@negrel/denoload-metrics": "^0.1.0",
+    "@supabase/gotrue-js": "^2.55.0",
+    "expect": "^29.7.0"
   }
 }

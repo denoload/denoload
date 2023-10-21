@@ -30,33 +30,47 @@ This project is based on [Bun][bun].
 ## Example script
 
 ```ts
+import { faker } from '@faker-js/faker'
 import { GoTrueClient } from '@supabase/gotrue-js'
-import * as random from './random.ts'
+import { globalRegistry } from '@negrel/denoload-metrics'
+import expect from 'expect'
 
 export const options = {
   scenarios: {
     perVuIter: {
       executor: 'per-vu-iterations',
-      vus: 512,
+      vus: 256,
       iterations: 10
     }
   }
 }
 
 const AuthClient = new GoTrueClient({ url: 'http://gotrue.local' })
+const signUpCounter = globalRegistry.Counter('signup')
+const signOutCounter = globalRegistry.Counter('signout')
 
 export default async function (): Promise<void> {
   // Sign up and sign in.
-  await AuthClient.signUp({
-    email: random.email(),
-    password: random.password()
-  })
+  {
+    const { data, error } = await AuthClient.signUp({
+      email: faker.internet.email(),
+      password: faker.internet.password()
+    })
+    expect(error).toBeNull()
+    expect(data).not.toBeNull()
+    signUpCounter.add(1)
+  }
 
   await Bun.sleep(1000)
 
-  // Interact with your API
+  // Interact with your API...
 
-  await AuthClient.signOut()
+  // Sign out.
+  {
+    const { error } = await AuthClient.signOut()
+    expect(error).toBeNull()
+    signOutCounter.add(1)
+  }
 }
 ```
 

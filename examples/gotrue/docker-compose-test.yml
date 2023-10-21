@@ -1,10 +1,9 @@
 version: '3'
 services:
   denoload:
-    image: "docker.io/negrel/denoload:dev"
+    image: "docker.io/negrel/denoload:${DENOLOAD_VERSION:-latest}"
     working_dir: /app
-    # entrypoint: sleep 1h
-    command: /app/main.ts
+    command: run /app/main.ts
     volumes:
       - ./:/app/:ro
     networks:
