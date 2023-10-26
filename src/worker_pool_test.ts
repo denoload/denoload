@@ -82,6 +82,9 @@ test('worker pool enqueue task if all workers are full', async () => {
     })
 
     promises.push(p)
+
+    // Sleep so worker and task is started.
+    await Bun.sleep(10)
   }
 
   const results = await Promise.all(promises)
