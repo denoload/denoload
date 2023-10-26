@@ -3,7 +3,7 @@ import * as readline from 'node:readline'
 import executors, { type ScenarioOptions, type ScenarioProgress, type Executor } from './executors.ts'
 import log from './log.ts'
 import * as metrics from '@negrel/denoload-metrics'
-import { padLeft, printMetrics } from './utils.ts'
+import { formatTab, padLeft, printMetrics } from './utils.ts'
 import { WorkerPool } from './worker_pool.ts'
 
 const logger = log.getLogger('runner')
@@ -62,6 +62,7 @@ export async function run (moduleURL: URL): Promise<void> {
     return acc
   }, [])
   printMetrics(metrics.mergeRegistryObjects(...vuMetrics))
+  console.log()
   await printProgress()
 
   // Clean up.
@@ -107,11 +108,13 @@ function progressPrinter (workerPool: WorkerPool, execs: Executor[]): () => Prom
     readline.moveCursor(process.stdout, 0, (execs.length + 1) * -1)
     readline.clearScreenDown(process.stdout)
 
-    console.log(`running (${formatRunningSinceTime(startTime)}), ${currentVUs}/${maxVUs}VUs, ${iterationsTotal} complete iterations`)
+    console.log(`running (${formatRunningSinceTime(startTime)}), ${currentVUs}/${maxVUs} VUs, ${iterationsTotal} complete iterations`)
+    const lines: string[][] = []
     execs.forEach((exec) => {
       const scenarioProgress = exec.scenarioProgress({ startTime, iterationsDone: iterationsDone[exec.scenarioName] })
-      printScenarioProgress(exec.scenarioName, scenarioProgress)
+      lines.push(formatScenarioProgress(exec.scenarioName, scenarioProgress))
     })
+    console.log(formatTab(lines).join('\n'))
   }
 }
 
@@ -124,19 +127,20 @@ function formatRunningSinceTime (startTime: number): string {
   return `${padLeft(minutes.toString(), '0', 2)}m${padLeft(seconds.toString(), '0', 2)}s`
 }
 
-function printScenarioProgress (scenarioName: string, progress: ScenarioProgress): void {
-  const progressBarEmptyChar =
+const progressBarEmptyChar =
       '--------------------------------------------------'
-  const progressBarFullChar =
+const progressBarFullChar =
       '=================================================='
 
+function formatScenarioProgress (scenarioName: string, progress: ScenarioProgress): string[] {
   const percentage = Math.floor(progress.percentage)
 
-  console.log(
-    `${scenarioName} ${progress.percentage === 100 ? '✓' : ' '} [${
-      progressBarFullChar.slice(0, Math.floor(percentage / 2))
-    }${
-      progressBarEmptyChar.slice(0, progressBarEmptyChar.length - Math.floor(percentage / 2))
-    }]`
-  )
+  return [
+    scenarioName,
+    progress.percentage === 100 ? '✓' : ' ',
+    '[' + progressBarFullChar.slice(0, Math.floor(percentage / 2)) +
+      progressBarEmptyChar.slice(0, progressBarEmptyChar.length - Math.floor(percentage / 2)) +
+    ']',
+    progress.extraInfos
+  ]
 }

@@ -1,7 +1,7 @@
 export MAKEFLAGS += --always-make
 
 node_modules:
-	bun install --dev
+	if [ ! -d node_modules ]; then bun install --dev; fi
 
 test: node_modules
 	bun test
