@@ -8,12 +8,12 @@ export function printMetrics (m: metrics.RegistryObj): void {
   for (const trendName in m.trends) {
     const trendObj = m.trends[trendName]
 
-    rows.push([`  ${pad(trendName, '.', 24)}:`, ...formatTrendTag(trendObj._), `total=${trendObj._.length}`])
+    rows.push([`  ${pad(trendName, '.', 24)}:`, ...formatTrendTag(trendObj._)])
 
     for (const [tagName, tag] of Object.entries(trendObj)) {
       if (tagName === '_') continue
 
-      rows.push([`      ${pad(tagName, '.', 20)}:`, ...formatTrendTag(tag), `total=${tag.length}`])
+      rows.push([`      ${pad(tagName, '.', 20)}:`, ...formatTrendTag(tag)])
     }
   }
 
@@ -21,7 +21,7 @@ export function printMetrics (m: metrics.RegistryObj): void {
 }
 
 function formatTrendTag (trend: number[]): string[] {
-  const { avg, min, max, percentiles: [med, p90, p95, p99] } = metrics.trend(trend, [50, 90, 95, 99])
+  const { avg, min, max, percentiles: { 50: med, 90: p90, 95: p95, 99: p99 }, total } = metrics.trend(trend, [50, 90, 95, 99])
   const avgStr = formatDuration(avg)
   const minStr = formatDuration(min)
   const maxStr = formatDuration(max)
@@ -37,7 +37,8 @@ function formatTrendTag (trend: number[]): string[] {
     `med=${medStr}`,
     `p(90)=${p90Str}`,
     `p(95)=${p95Str}`,
-    `p(99)=${p99Str}`
+    `p(99)=${p99Str}`,
+    `total=${total}`
   ]
 }
 

@@ -1,9 +1,13 @@
 import { faker } from '@faker-js/faker'
 import { GoTrueClient } from '@supabase/gotrue-js'
-import { globalRegistry } from '@negrel/denoload-metrics'
+import { type Report, globalRegistry } from '@negrel/denoload-metrics'
 import expect from 'expect'
 
 export const options = {
+  threshold: ({ metrics }: { metrics: Report }) => {
+    // No failed iterations.
+    expect(metrics.trends.iterations).not.toHaveProperty('fail')
+  },
   scenarios: {
     perVuIter: {
       executor: 'per-vu-iterations',

@@ -50,7 +50,8 @@ void (async () => {
     .argument('<file_path>', 'path to test file')
     .action(async (testfile) => {
       const moduleURL = new URL(testfile, 'file://' + process.cwd() + '/')
-      await run(moduleURL)
+      const ok = await run(moduleURL)
+      if (!ok) process.exit(1)
     })
   program.parse()
 })()

@@ -12,16 +12,17 @@ const logger = log.getLogger('runner')
  * Options defines options exported by a test script.
  */
 export interface TestOptions {
+  threshold?: (_: { metrics: metrics.Report }) => void
   scenarios: Record<string, ScenarioOptions>
 }
 
-export async function run (moduleURL: URL): Promise<void> {
+export async function run (moduleURL: URL): Promise<boolean> {
   logger.debug(`loading options of module "${moduleURL.toString()}"...`)
   const moduleOptions = await loadOptions(moduleURL)
   logger.debug('options loaded', moduleOptions)
   if (moduleOptions === null) {
     logger.error('no options object exported from test module')
-    return
+    return false
   }
 
   // Create scenarios executors
@@ -40,7 +41,7 @@ export async function run (moduleURL: URL): Promise<void> {
   } catch (err) {
     clearInterval(intervalId)
     logger.error('failed to await scenarios executions', err)
-    return
+    return false
   }
 
   // Stop progress report.
@@ -48,7 +49,38 @@ export async function run (moduleURL: URL): Promise<void> {
   readline.moveCursor(process.stdout, 0, (execs.length + 1) * -1)
   readline.clearScreenDown(process.stdout)
 
-  // Collect & print metrics.
+  // Collect metrics.
+  const testMetrics = await collectAndMergeMetricsRegistry(workerPool)
+  const report = metrics.report(testMetrics, [50, 90, 95, 99])
+
+  // Execute threshold.
+  let thresholdOk = true
+  if (moduleOptions.threshold !== undefined) {
+    try {
+      moduleOptions.threshold({ metrics: report })
+    } catch (err) {
+      thresholdOk = false
+      console.error(err)
+    }
+  }
+
+  // Print metrics.
+  printMetrics(testMetrics)
+  console.log()
+  await printProgress()
+
+  // Clean up.
+  workerPool.terminate()
+  logger.info('scenarios successfully executed, exiting...')
+
+  return thresholdOk
+}
+
+async function loadOptions (moduleURL: URL): Promise<TestOptions | null> {
+  return (await import(moduleURL.toString()))?.options
+}
+
+async function collectAndMergeMetricsRegistry (workerPool: WorkerPool): Promise<metrics.RegistryObj> {
   const metricsPromises = await workerPool.forEachWorkerRemoteProcedureCall<never, metrics.RegistryObj>({
     name: 'metrics',
     args: []
@@ -61,17 +93,8 @@ export async function run (moduleURL: URL): Promise<void> {
     if (p.status === 'fulfilled') acc.push(p.value!)
     return acc
   }, [])
-  printMetrics(metrics.mergeRegistryObjects(...vuMetrics))
-  console.log()
-  await printProgress()
 
-  // Clean up.
-  workerPool.terminate()
-  logger.info('scenarios successfully executed, exiting...')
-}
-
-async function loadOptions (moduleURL: URL): Promise<TestOptions | null> {
-  return (await import(moduleURL.toString()))?.options
+  return metrics.mergeRegistryObjects(...vuMetrics)
 }
 
 function progressPrinter (workerPool: WorkerPool, execs: Executor[]): () => Promise<void> {
