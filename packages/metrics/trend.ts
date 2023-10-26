@@ -2,14 +2,15 @@ export interface Trend {
   min: number
   max: number
   avg: number
-  percentiles: number[]
+  percentiles: Record<number, number>
+  total: number
 }
 
 export function trend (data: number[], percentiles: number[]): Trend {
   const [min, max, avg] = calculateMinMaxAvg(data)
   const p = calculatePercentiles(data, percentiles.sort((a, b) => a - b))
 
-  return { min, max, avg, percentiles: p }
+  return { min, max, avg, percentiles: p, total: data.length }
 }
 
 function calculateMinMaxAvg (data: number[]): [number, number, number] {
@@ -37,7 +38,7 @@ function calculateMinMaxAvg (data: number[]): [number, number, number] {
   return [min, max, avg]
 }
 
-function calculatePercentiles (data: number[], percentiles: number[]): number[] {
+function calculatePercentiles (data: number[], percentiles: number[]): Record<number, number> {
   if (data.length === 0) {
     return percentiles.map(() => 0)
   }
@@ -45,19 +46,19 @@ function calculatePercentiles (data: number[], percentiles: number[]): number[] 
   // Sort the data in ascending order
   data.sort((a, b) => a - b)
 
-  const results: number[] = []
+  const results: Record<number, number> = {}
   for (const percentile of percentiles) {
     const index = (percentile / 100) * (data.length - 1)
     if (index % 1 === 0) {
       // If the index is an integer, take the exact value
-      results.push(data[index])
+      results[percentile] = data[index]
     } else {
       // If the index is not an integer, interpolate between adjacent values
       const lower = Math.floor(index)
       const upper = lower + 1
       const fraction = index - lower
       const interpolatedValue = data[lower] + fraction * (data[upper] - data[lower])
-      results.push(interpolatedValue)
+      results[percentile] = interpolatedValue
     }
   }
 

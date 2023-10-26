@@ -14,6 +14,7 @@ lint/fix: node_modules
 
 check: node_modules
 	bunx tsc
+	cd packages/metrics; bunx tsc
 
 docker/build:
 	DOCKER_BUILDKIT=1 docker build . -t negrel/denoload:dev

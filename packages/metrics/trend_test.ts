@@ -13,10 +13,11 @@ test('trend of [100; 200] with p(50), p(90), p(99)', () => {
     min: 100,
     max: 200,
     avg: 150,
-    percentiles: [
-      150,
-      190,
-      199
-    ]
+    percentiles: {
+      50: 150,
+      90: 190,
+      99: 199
+    },
+    total: 101
   })
 })
