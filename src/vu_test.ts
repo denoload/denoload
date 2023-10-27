@@ -86,3 +86,110 @@ test('VU iterations total current iterations done even with multiple doIteration
 
   expect(vu.iterations).toBe(5)
 })
+
+test('VU timeout if iterations exceed maxDuration', async () => {
+  const vu = new VU(0, 10)
+
+  const iterationsTimeout = 1000 // 1s
+
+  const server = Bun.serve({
+    port: 8000,
+    async fetch () {
+      // Sleep a little so 2nd iteration timeout.
+      await Bun.sleep(iterationsTimeout * 0.75)
+      return new Response('Hello world')
+    }
+  })
+
+  await vu.doIterations('./test_vu_script/fetch_localhost.ts', 2, iterationsTimeout)
+
+  const metrics = vu.metrics()
+  expect(metrics).toMatchObject({
+    trends: {
+      iterations: {
+        _: expect.any(Array),
+        success: expect.any(Array),
+        fail: expect.any(Array)
+      },
+      fetch: {
+        _: expect.any(Array),
+        OK: expect.any(Array),
+        fail: expect.any(Array)
+      }
+    },
+    counters: {}
+  })
+
+  server.stop(true)
+})
+
+test('VU timeout and abort fetch if iterations exceed max duration', async () => {
+  const vu = new VU(0, 10)
+
+  const iterationsTimeout = 1000 // 1s
+
+  const server = Bun.serve({
+    port: 8000,
+    async fetch () {
+      // Sleep a little so 2nd iteration timeout.
+      await Bun.sleep(iterationsTimeout * 0.75)
+      return new Response('Hello world')
+    }
+  })
+
+  await vu.doIterations('./test_vu_script/fetch_localhost.ts', 2, iterationsTimeout)
+
+  const metrics = vu.metrics()
+  expect(metrics).toMatchObject({
+    trends: {
+      iterations: {
+        _: expect.any(Array),
+        success: expect.any(Array),
+        fail: expect.any(Array)
+      },
+      fetch: {
+        _: expect.any(Array),
+        OK: expect.any(Array),
+        fail: expect.any(Array)
+      }
+    },
+    counters: {}
+  })
+
+  server.stop(true)
+})
+
+test('VU timeout and skip remaining iterations if iterations exceed max duration', async () => {
+  const vu = new VU(0, 10)
+
+  const iterationsTimeout = 1000 // 1s
+
+  const server = Bun.serve({
+    port: 8000,
+    async fetch () {
+      // Timeout on first iteration.
+      await Bun.sleep(iterationsTimeout * 2)
+      return new Response('Hello world')
+    }
+  })
+
+  await vu.doIterations('./test_vu_script/fetch_localhost.ts', 2, iterationsTimeout)
+
+  const metrics = vu.metrics()
+  expect(metrics).toMatchObject({
+    trends: {
+      iterations: {
+        _: expect.any(Array),
+        fail: expect.any(Array), // First iteration failed due to abort error.
+        skipped: expect.any(Array) // Second iteration was skipped.
+      },
+      fetch: {
+        _: expect.any(Array),
+        fail: expect.any(Array)
+      }
+    },
+    counters: {}
+  })
+
+  server.stop(true)
+})

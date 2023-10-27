@@ -23,13 +23,13 @@ export class VU {
   }
 
   // doIterations must not be called concurrently.
-  async doIterations (moduleUrl: string, iterations: number): Promise<void> {
+  async doIterations (moduleUrl: string, iterations: number, maxDurationMillis: number): Promise<void> {
     const doIterations = await this.realm.importValue('./vu_shadow_realm.ts', 'doIterations')
     const iterationsTotal: () => number = await this.realm.importValue('./vu_shadow_realm.ts', 'iterationsTotal')
     this.jsonMetrics = await this.realm.importValue('./vu_shadow_realm.ts', 'jsonMetricsRegistry')
 
     // Start iterations
-    void doIterations(moduleUrl, this.id, iterations)
+    void doIterations(moduleUrl, this.id, iterations, maxDurationMillis)
 
     // Initial number of iterations.
     const initialIterations = this._iterations
