@@ -60,7 +60,13 @@ export async function run (moduleURL: URL): Promise<boolean> {
       moduleOptions.threshold({ metrics: report })
     } catch (err) {
       thresholdOk = false
-      console.error(err)
+      if (err !== null && typeof err === 'object' && err.constructor.name === 'JestAssertionError') {
+        console.log('Threshold fails:', (err as any).matcherResult.message)
+      } else if (err instanceof Error) {
+        console.log('Threshold fails:', err.message)
+      } else {
+        console.log('Threshold fails:', err)
+      }
     }
   }
 
