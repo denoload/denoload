@@ -22,6 +22,7 @@ export class VU {
     return JSON.parse(this.jsonMetrics!()) as metrics.RegistryObj
   }
 
+  // doIterations must not be called concurrently.
   async doIterations (moduleUrl: string, iterations: number): Promise<void> {
     const doIterations = await this.realm.importValue('./vu_shadow_realm.ts', 'doIterations')
     const iterationsTotal: () => number = await this.realm.importValue('./vu_shadow_realm.ts', 'iterationsTotal')
@@ -30,13 +31,19 @@ export class VU {
     // Start iterations
     void doIterations(moduleUrl, this.id, iterations)
 
+    // Initial number of iterations.
+    const initialIterations = this._iterations
+
     // Poll VU progress.
     let intervalId: NodeJS.Timeout
     await new Promise((resolve, _reject) => {
       // Poll iteration status regularly until iteration is done.
       intervalId = setInterval(() => {
+        // Update total iterations counter.
         this._iterations = iterationsTotal()
-        if (this._iterations === iterations) {
+
+        // Stop condition.
+        if (this._iterations - initialIterations === iterations) {
           clearInterval(intervalId)
           resolve(undefined)
         }
