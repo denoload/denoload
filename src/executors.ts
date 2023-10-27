@@ -22,6 +22,7 @@ export interface ScenarioOptions {
   executor: ExecutorKind
   vus: number
   iterations: number
+  maxDuration: number
 }
 
 /**
@@ -68,6 +69,13 @@ export abstract class Executor {
   ): ScenarioProgress
 }
 
+const defaultPerVuIterationOption: ScenarioOptions = {
+  executor: ExecutorKind.PerVuIteration,
+  iterations: 1,
+  vus: 1,
+  maxDuration: 30000 // 30s
+}
+
 /**
  * Per VU iteration executor managed a fixed amount of iteration per VU.
  */
@@ -79,10 +87,10 @@ export class ExecutorPerVuIteration extends Executor {
   private _currentVUs = 0
   private totalIterations = 0
 
-  constructor (workerPool: WorkerPool, scenarioName: string, moduleURL: URL, options: ScenarioOptions) {
+  constructor (workerPool: WorkerPool, scenarioName: string, moduleURL: URL, options: Partial<ScenarioOptions>) {
     super(workerPool, scenarioName)
     this.moduleURL = moduleURL
-    this.options = options
+    this.options = { ...defaultPerVuIterationOption, ...options }
   }
 
   override async execute (): Promise<void> {
@@ -95,7 +103,7 @@ export class ExecutorPerVuIteration extends Executor {
     for (let vus = 0; vus < this.options.vus; vus++) {
       promises[vus] = this.workerPool.remoteProcedureCall({
         name: 'iterations',
-        args: [this.moduleURL.toString(), this.scenarioName, this.options.iterations, vus, 10]
+        args: [this.moduleURL.toString(), this.scenarioName, this.options.iterations, vus, 10, this.options.maxDuration]
       })
       this._currentVUs++
     }
@@ -109,9 +117,6 @@ export class ExecutorPerVuIteration extends Executor {
     this.logger.info(
       `scenario successfully executed in ${formatDuration(scenarioEnd - scenarioStart)}.`
     )
-
-    // Clean up.
-    // this.workerPool.terminate()
   }
 
   override currentVUs (): number {
@@ -140,7 +145,7 @@ const executors: {
     workerPool: WorkerPool,
     scenarioName: string,
     moduleURL: URL,
-    scenarioOptions: ScenarioOptions
+    scenarioOptions: Partial<ScenarioOptions>
   ) => Executor
 } = {
   [ExecutorKind.PerVuIteration]: ExecutorPerVuIteration

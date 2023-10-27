@@ -16,12 +16,19 @@ self.onmessage = workerProcedureHandler({
     logger = log.getLogger(`worker/${workerId}`)
     logger.info('worker ready')
   },
-  async iterations (moduleURL: string, scenarioName: string, nbIter: number, vuId: number, pollIntervalMillis: number): Promise<void> {
+  async iterations (
+    moduleURL: string,
+    scenarioName: string,
+    nbIter: number,
+    vuId: number,
+    pollIntervalMillis: number,
+    maxDurationMillis: number
+  ): Promise<void> {
     const vu = new VU(vuId, pollIntervalMillis)
     if (VUs[scenarioName] === undefined) VUs[scenarioName] = []
     VUs[scenarioName].push(vu)
 
-    await vu.doIterations(moduleURL, nbIter)
+    await vu.doIterations(moduleURL, nbIter, maxDurationMillis)
   },
   iterationsDone (): Record<string, number> {
     const iterationsDone: Record<string, number> = {}
