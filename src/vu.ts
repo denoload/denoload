@@ -1,4 +1,5 @@
 import type * as metrics from '@negrel/denoload-metrics'
+import { type ScenarioState } from './scenario_state'
 
 export class VU {
   private readonly realm: ShadowRealm
@@ -6,6 +7,7 @@ export class VU {
   private readonly id: number
   private _iterations = 0
   private jsonMetrics?: () => string
+  private jsonScenarioState?: () => string
 
   constructor (id: number, pollIntervalMillis: number) {
     this.realm = new ShadowRealm()
@@ -13,8 +15,16 @@ export class VU {
     this.pollIntervalMillis = pollIntervalMillis
   }
 
-  get iterations (): number {
-    return this._iterations
+  scenarioState (): ScenarioState {
+    if (this.jsonScenarioState === undefined) {
+      return {
+        iterations: { fail: 0, success: 0 },
+        aborted: false
+      }
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    return JSON.parse(this.jsonScenarioState()) as ScenarioState
   }
 
   metrics (): metrics.RegistryObj {
@@ -26,7 +36,9 @@ export class VU {
   async doIterations (moduleUrl: string, iterations: number, maxDurationMillis: number): Promise<void> {
     const doIterations = await this.realm.importValue('./vu_shadow_realm.ts', 'doIterations')
     const iterationsTotal: () => number = await this.realm.importValue('./vu_shadow_realm.ts', 'iterationsTotal')
+    const iterationsAborted: () => boolean = await this.realm.importValue('./vu_shadow_realm.ts', 'aborted')
     this.jsonMetrics = await this.realm.importValue('./vu_shadow_realm.ts', 'jsonMetricsRegistry')
+    this.jsonScenarioState = await this.realm.importValue('./vu_shadow_realm.ts', 'jsonScenarioState')
 
     // Start iterations
     void doIterations(moduleUrl, this.id, iterations, maxDurationMillis)
@@ -43,7 +55,7 @@ export class VU {
         this._iterations = iterationsTotal()
 
         // Stop condition.
-        if (this._iterations - initialIterations === iterations) {
+        if (this._iterations - initialIterations === iterations || iterationsAborted()) {
           clearInterval(intervalId)
           resolve(undefined)
         }

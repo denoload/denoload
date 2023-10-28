@@ -1,11 +1,8 @@
 import * as log from './log.ts'
+import { type ScenarioProgress } from './scenario_progress.ts'
+import { type ScenarioState } from './scenario_state.ts'
 import { formatDuration } from './utils.ts'
 import { type WorkerPool } from './worker_pool.ts'
-
-export interface ScenarioProgress {
-  percentage: number
-  extraInfos: string
-}
 
 /**
  * Enumeration of available executors.
@@ -62,11 +59,9 @@ export abstract class Executor {
   abstract currentVUs (): number
 
   /**
-   * Compute progress percentage.
+   * Compute scenario progress based on its state.
    */
-  abstract scenarioProgress (
-    { startTime, iterationsDone }: { startTime: number, iterationsDone: number }
-  ): ScenarioProgress
+  abstract scenarioProgress (state: ScenarioState): ScenarioProgress
 }
 
 const defaultPerVuIterationOption: ScenarioOptions = {
@@ -127,12 +122,12 @@ export class ExecutorPerVuIteration extends Executor {
     return this.options.vus
   }
 
-  override scenarioProgress (
-    { iterationsDone }: { startTime: number, iterationsDone: number }
-  ): ScenarioProgress {
+  override scenarioProgress (state: ScenarioState): ScenarioProgress {
+    const iterations = state.iterations.success + state.iterations.fail
     return {
-      percentage: iterationsDone / this.totalIterations * 100,
-      extraInfos: ''
+      percentage: iterations / this.totalIterations * 100,
+      extraInfos: '',
+      aborted: state.aborted
     }
   }
 }

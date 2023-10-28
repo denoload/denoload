@@ -3,6 +3,7 @@ import * as metrics from '@negrel/denoload-metrics'
 import * as log from './log.ts'
 import { workerProcedureHandler } from './rpc.ts'
 import { VU } from './vu.ts'
+import { type ScenarioState, mergeScenarioState } from './scenario_state.ts'
 
 declare const self: Worker
 
@@ -30,19 +31,13 @@ self.onmessage = workerProcedureHandler({
 
     await vu.doIterations(moduleURL, nbIter, maxDurationMillis)
   },
-  iterationsDone (): Record<string, number> {
-    const iterationsDone: Record<string, number> = {}
+  scenariosState (): Record<string, ScenarioState> {
+    const states: Record<string, ScenarioState> = {}
     for (const scenario in VUs) {
-      const vus = VUs[scenario]
-      let total = 0
-      for (let i = 0; i < vus.length; i++) {
-        total += vus[i].iterations
-      }
-
-      iterationsDone[scenario] = total
+      states[scenario] = mergeScenarioState(...VUs[scenario].map((v) => v.scenarioState()))
     }
 
-    return iterationsDone
+    return states
   },
   metrics (): metrics.RegistryObj {
     return metrics.mergeRegistryObjects(...Object.values(VUs).flat().map((v) => v.metrics()))

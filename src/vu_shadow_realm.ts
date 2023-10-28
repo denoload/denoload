@@ -3,10 +3,14 @@
 /* eslint-disable @typescript-eslint/no-floating-promises */
 
 import { globalRegistry } from '@negrel/denoload-metrics'
+import { type ScenarioState } from './scenario_state'
 
 const iterationsTrend = globalRegistry.Trend('iterations')
 const fetchTrend = globalRegistry.Trend('fetch')
-let rawIterationsCounter = 0
+const iterations = {
+  success: 0,
+  fail: 0
+}
 
 // Abort signal to limit max duration of iterations.
 let abortSignal = AbortSignal.abort('uninitialized')
@@ -27,28 +31,39 @@ export function doIterations (moduleURL: string, vu: number, nbIter: number, max
       const start = Bun.nanoseconds()
 
       if (aborted) {
-        iterationsTrend.add(Bun.nanoseconds() - start, 'skipped')
-        rawIterationsCounter++
-        continue
+        break
       }
 
       try {
         await module.default(vu, i)
 
         iterationsTrend.add(Bun.nanoseconds() - start, 'success')
+        iterations.success++
       } catch (err) {
         console.error(err)
 
         iterationsTrend.add(Bun.nanoseconds() - start, 'fail')
+        iterations.fail++
       }
-
-      rawIterationsCounter++
     }
   }).finally(restoreGlobalThis)
 }
 
 export function iterationsTotal (): number {
-  return rawIterationsCounter
+  return iterations.fail + iterations.success
+}
+
+export function aborted (): boolean {
+  return abortSignal.aborted
+}
+
+export function jsonScenarioState (): string {
+  const state: ScenarioState = {
+    iterations,
+    aborted: abortSignal.aborted
+  }
+
+  return JSON.stringify(state)
 }
 
 export function jsonMetricsRegistry (): string {
