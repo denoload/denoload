@@ -8,18 +8,28 @@ import { type WorkerPool } from './worker_pool.ts'
  * Enumeration of available executors.
  */
 export enum ExecutorKind {
-  // A fixed amount of iteration per VU
+  // A fixed amount of iteration per VU.
   PerVuIteration = 'per-vu-iterations',
+  // A fixed number of VUs execute as many iterations as possible for a
+  // specified amount of time.
+  ConstantVus = 'constant-vus'
 }
 
 /**
  * ScenarioOptions defines options of a scenario exported by a test script.
  */
 export interface ScenarioOptions {
-  executor: ExecutorKind
-  vus: number
-  iterations: number
-  maxDuration: number
+  [ExecutorKind.PerVuIteration]: {
+    executor: ExecutorKind.PerVuIteration
+    vus: number
+    iterations: number
+    maxDuration: number
+  }
+  [ExecutorKind.ConstantVus]: {
+    executor: ExecutorKind.ConstantVus
+    vus: number
+    duration: number
+  }
 }
 
 /**
@@ -64,7 +74,7 @@ export abstract class Executor {
   abstract scenarioProgress (state: ScenarioState): ScenarioProgress
 }
 
-const defaultPerVuIterationOption: ScenarioOptions = {
+const defaultPerVuIterationOption: ScenarioOptions[ExecutorKind.PerVuIteration] = {
   executor: ExecutorKind.PerVuIteration,
   iterations: 1,
   vus: 1,
@@ -77,12 +87,12 @@ const defaultPerVuIterationOption: ScenarioOptions = {
 export class ExecutorPerVuIteration extends Executor {
   private readonly logger = log.getLogger('executor-per-vu-iteration')
   private readonly moduleURL: URL
-  private readonly options: ScenarioOptions
+  private readonly options: ScenarioOptions[ExecutorKind.PerVuIteration]
 
   private _currentVUs = 0
   private totalIterations = 0
 
-  constructor (workerPool: WorkerPool, scenarioName: string, moduleURL: URL, options: Partial<ScenarioOptions>) {
+  constructor (workerPool: WorkerPool, scenarioName: string, moduleURL: URL, options: Partial<ScenarioOptions[ExecutorKind.PerVuIteration]>) {
     super(workerPool, scenarioName)
     this.moduleURL = moduleURL
     this.options = { ...defaultPerVuIterationOption, ...options }
@@ -132,6 +142,82 @@ export class ExecutorPerVuIteration extends Executor {
   }
 }
 
+const defaultConstantVusOption: ScenarioOptions[ExecutorKind.ConstantVus] = {
+  executor: ExecutorKind.ConstantVus,
+  vus: 128,
+  duration: 30_000
+}
+
+/**
+ * Constant VUs iteration executor execute as many iterations as possible for a
+ * specified amount of time.
+ */
+class ExecutorConstantVus extends Executor {
+  private readonly logger = log.getLogger('executor-per-vu-iteration')
+  private readonly moduleURL: URL
+  private readonly options: ScenarioOptions[ExecutorKind.ConstantVus]
+  private startDate: Date
+  private readonly endDate: Date
+
+  constructor (
+    workerPool: WorkerPool,
+    scenarioName: string,
+    moduleURL: URL,
+    options: Partial<ScenarioOptions[ExecutorKind.ConstantVus]>
+  ) {
+    super(workerPool, scenarioName)
+    this.moduleURL = moduleURL
+    this.options = { ...defaultConstantVusOption, ...options }
+    this.startDate = new Date()
+    this.endDate = new Date()
+  }
+
+  async execute (): Promise<void> {
+    this.logger.info(`executing "${this.scenarioName}" scenario...`)
+    this.startDate = new Date()
+    this.endDate.setTime(this.startDate.getTime() + (this.options.duration * 1000))
+
+    this.logger.debug('running VUs...')
+    const scenarioStart = Bun.nanoseconds()
+    const promises = new Array(this.options.vus)
+    for (let vus = 0; vus < this.options.vus; vus++) {
+      promises[vus] = this.workerPool.remoteProcedureCall({
+        name: 'iterations',
+        args: [this.moduleURL.toString(), this.scenarioName, Number.MAX_SAFE_INTEGER, vus, 10, this.options.duration * 1000]
+      })
+    }
+
+    // Wait end of all iterations.
+    await Promise.all(promises)
+    this.logger.debug('VUs ran.')
+    const scenarioEnd = Bun.nanoseconds()
+
+    // Stop console reported test is done.
+    this.logger.info(
+        `scenario successfully executed in ${formatDuration(scenarioEnd - scenarioStart)}.`
+    )
+  }
+
+  maxVUs (): number {
+    return this.options.vus
+  }
+
+  currentVUs (): number {
+    return this.options.vus
+  }
+
+  scenarioProgress (state: ScenarioState): ScenarioProgress {
+    const now = new Date().getTime() - this.startDate.getTime()
+    const end = this.endDate.getTime() - this.startDate.getTime()
+
+    return {
+      percentage: now / end * 100,
+      extraInfos: '',
+      aborted: state.aborted
+    }
+  }
+}
+
 /**
  * Map of executors.
  */
@@ -140,10 +226,11 @@ const executors: {
     workerPool: WorkerPool,
     scenarioName: string,
     moduleURL: URL,
-    scenarioOptions: Partial<ScenarioOptions>
+    scenarioOptions: Partial<ScenarioOptions[key]>
   ) => Executor
 } = {
-  [ExecutorKind.PerVuIteration]: ExecutorPerVuIteration
+  [ExecutorKind.PerVuIteration]: ExecutorPerVuIteration,
+  [ExecutorKind.ConstantVus]: ExecutorConstantVus
 }
 
 export default executors
