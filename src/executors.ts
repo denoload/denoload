@@ -3,6 +3,7 @@ import { type ScenarioProgress } from './scenario_progress.ts'
 import { type ScenarioState } from './scenario_state.ts'
 import { formatDuration } from './utils.ts'
 import { type WorkerPool } from './worker_pool.ts'
+import { type IterationsOptions } from './worker_script.ts'
 
 /**
  * Enumeration of available executors.
@@ -106,9 +107,18 @@ export class ExecutorPerVuIteration extends Executor {
     const scenarioStart = Bun.nanoseconds()
     const promises = new Array(this.options.vus)
     for (let vus = 0; vus < this.options.vus; vus++) {
+      const options: IterationsOptions = {
+        moduleURL: this.moduleURL.toString(),
+        scenarioName: this.scenarioName,
+        nbIter: this.options.iterations,
+        vuId: vus,
+        pollIntervalMillis: 10,
+        maxDurationMillis: this.options.maxDuration
+      }
+
       promises[vus] = this.workerPool.remoteProcedureCall({
         name: 'iterations',
-        args: [this.moduleURL.toString(), this.scenarioName, this.options.iterations, vus, 10, this.options.maxDuration]
+        args: [options]
       })
       this._currentVUs++
     }
@@ -181,9 +191,18 @@ class ExecutorConstantVus extends Executor {
     const scenarioStart = Bun.nanoseconds()
     const promises = new Array(this.options.vus)
     for (let vus = 0; vus < this.options.vus; vus++) {
+      const options: IterationsOptions = {
+        moduleURL: this.moduleURL.toString(),
+        scenarioName: this.scenarioName,
+        nbIter: Number.MAX_SAFE_INTEGER,
+        vuId: vus,
+        pollIntervalMillis: 10,
+        maxDurationMillis: this.endDate.getTime() - this.startDate.getTime()
+      }
+
       promises[vus] = this.workerPool.remoteProcedureCall({
         name: 'iterations',
-        args: [this.moduleURL.toString(), this.scenarioName, Number.MAX_SAFE_INTEGER, vus, 10, this.options.duration * 1000]
+        args: [options]
       })
     }
 

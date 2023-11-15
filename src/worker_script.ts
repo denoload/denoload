@@ -5,6 +5,15 @@ import { workerProcedureHandler } from './rpc.ts'
 import { VU } from './vu.ts'
 import { type ScenarioState, mergeScenarioState } from './scenario_state.ts'
 
+export interface IterationsOptions {
+  moduleURL: string
+  scenarioName: string
+  nbIter: number
+  vuId: number
+  pollIntervalMillis: number
+  maxDurationMillis: number
+}
+
 declare const self: Worker
 
 let logger = log.getLogger('worker/-1')
@@ -17,14 +26,14 @@ self.onmessage = workerProcedureHandler({
     logger = log.getLogger(`worker/${workerId}`)
     logger.info('worker ready')
   },
-  async iterations (
-    moduleURL: string,
-    scenarioName: string,
-    nbIter: number,
-    vuId: number,
-    pollIntervalMillis: number,
-    maxDurationMillis: number
-  ): Promise<void> {
+  async iterations ({
+    moduleURL,
+    scenarioName,
+    nbIter,
+    vuId,
+    pollIntervalMillis,
+    maxDurationMillis
+  }: IterationsOptions): Promise<void> {
     const vu = new VU(vuId, pollIntervalMillis)
     if (VUs[scenarioName] === undefined) VUs[scenarioName] = []
     VUs[scenarioName].push(vu)
