@@ -81,13 +81,10 @@ See [examples/gotrue](./examples/gotrue/) to run the script locally.
 Executors:
 - [x] Per VU iterations
 - [ ] Shared iterations
-- [ ] Constant VUs
+- [x] Constant VUs
 - [ ] Ramping VUs
 - [ ] Constant Arrival Rate
 - [ ] Ramping Arrival Rate
-
-Others:
-- [ ] Add cookies support
 
 ## Why `denoload` ?
 
