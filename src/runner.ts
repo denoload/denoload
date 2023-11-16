@@ -1,6 +1,6 @@
 import * as readline from 'node:readline'
 
-import executors, { type ScenarioOptions, type Executor } from './executors.ts'
+import executors, { type ScenarioOptions, type Executor, type ExecutorKind } from './executors.ts'
 import log from './log.ts'
 import * as metrics from '@negrel/denoload-metrics'
 import { formatTab, padLeft, printMetrics } from './utils.ts'
@@ -15,7 +15,7 @@ const logger = log.getLogger('runner')
  */
 export interface TestOptions {
   threshold?: (_: { metrics: metrics.Report }) => void
-  scenarios: Record<string, ScenarioOptions>
+  scenarios: Record<string, ScenarioOptions[ExecutorKind]>
 }
 
 export async function run (moduleURL: URL): Promise<boolean> {
@@ -32,7 +32,7 @@ export async function run (moduleURL: URL): Promise<boolean> {
   // Create scenarios executors
   const workerPool = new WorkerPool()
   const execs: Executor[] = Object.entries(moduleOptions.scenarios).map(([scenarioName, scenarioOptions]) =>
-    new executors[scenarioOptions.executor](workerPool, scenarioName, moduleURL, scenarioOptions))
+    new executors[scenarioOptions.executor](workerPool, scenarioName, moduleURL, scenarioOptions as any))
 
   // Print progress every second.
   const printProgress = progressPrinter(workerPool, execs)
