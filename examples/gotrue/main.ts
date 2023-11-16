@@ -12,7 +12,8 @@ export const options = {
     perVuIter: {
       executor: 'per-vu-iterations',
       vus: 16,
-      iterations: 10
+      iterations: 10,
+      maxDuration: '1m'
     }
   }
 }

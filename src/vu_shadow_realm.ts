@@ -12,20 +12,23 @@ const iterations = {
   fail: 0
 }
 
-// Abort signal to limit max duration of iterations.
+// Abort signal to limit scenario of duration (e.g gracefulStop).
 let abortSignal = AbortSignal.abort('uninitialized')
 
 /**
  * Start a floating promise that perform a single VU iteration.
  */
-export function doIterations (moduleURL: string, vu: number, nbIter: number, maxDurationMillis: number): void {
+export function doIterations (moduleURL: string, vu: number, nbIter: number, maxDurationMillis: number, gracefulStopMillis: number): void {
   alterGlobalThis()
 
   import(moduleURL).then(async (module) => {
-    abortSignal = AbortSignal.timeout(maxDurationMillis)
+    abortSignal = AbortSignal.timeout(maxDurationMillis + gracefulStopMillis)
 
     let aborted = false
     abortSignal.onabort = () => { aborted = true }
+    setTimeout(() => {
+      aborted = true
+    }, maxDurationMillis)
 
     for (let i = 0; i < nbIter; i++) {
       const start = Bun.nanoseconds()

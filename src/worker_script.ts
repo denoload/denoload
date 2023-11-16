@@ -12,6 +12,7 @@ export interface IterationsOptions {
   vuId: number
   pollIntervalMillis: number
   maxDurationMillis: number
+  gracefulStopMillis: number
 }
 
 declare const self: Worker
@@ -32,13 +33,14 @@ self.onmessage = workerProcedureHandler({
     nbIter,
     vuId,
     pollIntervalMillis,
-    maxDurationMillis
+    maxDurationMillis,
+    gracefulStopMillis
   }: IterationsOptions): Promise<void> {
     const vu = new VU(vuId, pollIntervalMillis)
     if (VUs[scenarioName] === undefined) VUs[scenarioName] = []
     VUs[scenarioName].push(vu)
 
-    await vu.doIterations(moduleURL, nbIter, maxDurationMillis)
+    await vu.doIterations(moduleURL, nbIter, maxDurationMillis, gracefulStopMillis)
   },
   scenariosState (): Record<string, ScenarioState> {
     const states: Record<string, ScenarioState> = {}

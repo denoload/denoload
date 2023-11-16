@@ -1,7 +1,7 @@
 import * as log from './log.ts'
 import { type ScenarioProgress } from './scenario_progress.ts'
 import { type ScenarioState } from './scenario_state.ts'
-import { formatDuration } from './utils.ts'
+import { formatDuration, parseDuration } from './utils.ts'
 import { type WorkerPool } from './worker_pool.ts'
 import { type IterationsOptions } from './worker_script.ts'
 
@@ -24,12 +24,14 @@ export interface ScenarioOptions {
     executor: ExecutorKind.PerVuIteration
     vus: number
     iterations: number
-    maxDuration: number
+    maxDuration: string
+    gracefulStop?: string
   }
   [ExecutorKind.ConstantVus]: {
     executor: ExecutorKind.ConstantVus
     vus: number
-    duration: number
+    duration: string
+    gracefulStop?: string
   }
 }
 
@@ -79,7 +81,8 @@ const defaultPerVuIterationOption: ScenarioOptions[ExecutorKind.PerVuIteration] 
   executor: ExecutorKind.PerVuIteration,
   iterations: 1,
   vus: 1,
-  maxDuration: 30000 // 30s
+  maxDuration: '30s',
+  gracefulStop: '10s'
 }
 
 /**
@@ -113,7 +116,8 @@ export class ExecutorPerVuIteration extends Executor {
         nbIter: this.options.iterations,
         vuId: vus,
         pollIntervalMillis: 10,
-        maxDurationMillis: this.options.maxDuration
+        maxDurationMillis: parseDuration(this.options.maxDuration) * 1000,
+        gracefulStopMillis: parseDuration(this.options.gracefulStop ?? '0s') * 1000
       }
 
       promises[vus] = this.workerPool.remoteProcedureCall({
@@ -155,7 +159,7 @@ export class ExecutorPerVuIteration extends Executor {
 const defaultConstantVusOption: ScenarioOptions[ExecutorKind.ConstantVus] = {
   executor: ExecutorKind.ConstantVus,
   vus: 128,
-  duration: 30_000
+  duration: '30s'
 }
 
 /**
@@ -185,7 +189,7 @@ class ExecutorConstantVus extends Executor {
   async execute (): Promise<void> {
     this.logger.info(`executing "${this.scenarioName}" scenario...`)
     this.startDate = new Date()
-    this.endDate.setTime(this.startDate.getTime() + (this.options.duration * 1000))
+    this.endDate.setTime(this.startDate.getTime() + (parseDuration(this.options.duration) * 1000))
 
     this.logger.debug('running VUs...')
     const scenarioStart = Bun.nanoseconds()
@@ -197,7 +201,8 @@ class ExecutorConstantVus extends Executor {
         nbIter: Number.MAX_SAFE_INTEGER,
         vuId: vus,
         pollIntervalMillis: 10,
-        maxDurationMillis: this.endDate.getTime() - this.startDate.getTime()
+        maxDurationMillis: this.endDate.getTime() - this.startDate.getTime(),
+        gracefulStopMillis: parseDuration(this.options.gracefulStop ?? '0s') * 1000
       }
 
       promises[vus] = this.workerPool.remoteProcedureCall({
@@ -228,9 +233,13 @@ class ExecutorConstantVus extends Executor {
   scenarioProgress (state: ScenarioState): ScenarioProgress {
     const now = new Date().getTime() - this.startDate.getTime()
     const end = this.endDate.getTime() - this.startDate.getTime()
+    let percentage = now / end * 100
+    if (now >= end) {
+      percentage = 100
+    }
 
     return {
-      percentage: now / end * 100,
+      percentage,
       extraInfos: '',
       aborted: state.aborted
     }

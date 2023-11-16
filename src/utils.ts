@@ -1,5 +1,21 @@
 import * as metrics from '@negrel/denoload-metrics'
 
+/**
+ * Parse a duration string with unit and returns the number of second.
+ */
+export function parseDuration (str: string): number {
+  let result = 0
+  const days = str.match(/(\d+)\s*d/)
+  const hours = str.match(/(\d+)\s*h/)
+  const minutes = str.match(/(\d+)\s*m/)
+  const seconds = str.match(/(\d+)\s*s/)
+  if (days !== null) { result += parseInt(days[1]) * 86400 }
+  if (hours !== null) { result += parseInt(hours[1]) * 3600 }
+  if (minutes !== null) { result += parseInt(minutes[1]) * 60 }
+  if (seconds !== null) { result += parseInt(seconds[1]) }
+  return result
+}
+
 export function printMetrics (m: metrics.RegistryObj): void {
   console.log('\n')
 

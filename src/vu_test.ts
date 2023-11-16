@@ -4,7 +4,7 @@ import { VU } from './vu'
 test('VU doIterations failed fetch and iteration produce trends with fail tag', async () => {
   const vu = new VU(0, 10)
 
-  await vu.doIterations('./test_vu_script/fetch_localhost.ts', 1, 1000)
+  await vu.doIterations('./test_vu_script/fetch_localhost.ts', 1, 1000, 0)
 
   const metrics = vu.metrics()
   expect(metrics).toMatchObject({
@@ -32,7 +32,7 @@ test('VU doIterations with success fetch and iteration produce trends with succe
     }
   })
 
-  await vu.doIterations('./test_vu_script/fetch_localhost.ts', 1, 1000)
+  await vu.doIterations('./test_vu_script/fetch_localhost.ts', 1, 1000, 0)
 
   const metrics = vu.metrics()
   expect(metrics).toMatchObject({
@@ -55,7 +55,7 @@ test('VU doIterations with success fetch and iteration produce trends with succe
 test('VU doIterations with catched fetch error and successful iteration produce trends with fail and success tag respectively', async () => {
   const vu = new VU(0, 10)
 
-  await vu.doIterations('./test_vu_script/fetch_localhost_catch.ts', 1, 1000)
+  await vu.doIterations('./test_vu_script/fetch_localhost_catch.ts', 1, 1000, 0)
 
   const metrics = vu.metrics()
   expect(metrics).toMatchObject({
@@ -78,11 +78,11 @@ test('VU iterations total current iterations done even with multiple doIteration
 
   expect(vu.scenarioState()).toEqual({ iterations: { fail: 0, success: 0 }, aborted: false })
 
-  await vu.doIterations('./test_vu_script/fetch_localhost_catch.ts', 2, 1000)
+  await vu.doIterations('./test_vu_script/fetch_localhost_catch.ts', 2, 1000, 0)
 
   expect(vu.scenarioState()).toEqual({ iterations: { fail: 0, success: 2 }, aborted: false })
 
-  await vu.doIterations('./test_vu_script/fetch_localhost_catch.ts', 3, 1000)
+  await vu.doIterations('./test_vu_script/fetch_localhost_catch.ts', 3, 1000, 0)
 
   expect(vu.scenarioState()).toEqual({ iterations: { fail: 0, success: 5 }, aborted: false })
 })
@@ -102,7 +102,7 @@ test('VU timeout and abort fetch if iterations exceed max duration', async () =>
   })
 
   // Third iteration will be skipped
-  await vu.doIterations('./test_vu_script/fetch_localhost.ts', 3, iterationsTimeout)
+  await vu.doIterations('./test_vu_script/fetch_localhost.ts', 3, iterationsTimeout, 0)
 
   const metrics = vu.metrics()
   expect(metrics).toMatchObject({
@@ -143,7 +143,7 @@ test('VU timeout and skip remaining iterations if iterations exceed max duration
     }
   })
 
-  await vu.doIterations('./test_vu_script/fetch_localhost.ts', 2, iterationsTimeout)
+  await vu.doIterations('./test_vu_script/fetch_localhost.ts', 2, iterationsTimeout, 0)
 
   const metrics = vu.metrics()
   expect(metrics).toMatchObject({
@@ -159,6 +159,77 @@ test('VU timeout and skip remaining iterations if iterations exceed max duration
     },
     counters: {}
   })
+
+  server.stop(true)
+})
+
+test('VU timeout but finish last iteration thanks to gracefulStop', async () => {
+  const vu = new VU(0, 10)
+
+  const iterationsTimeout = 1000 // 1s
+  const gracefulStop = 2000 // 1s
+
+  const server = Bun.serve({
+    port: 8000,
+    async fetch () {
+      // Timeout on first iteration.
+      await Bun.sleep(iterationsTimeout * 2)
+      return new Response('Hello world')
+    }
+  })
+
+  await vu.doIterations('./test_vu_script/fetch_localhost.ts', 1, iterationsTimeout, gracefulStop)
+
+  const metrics = vu.metrics()
+  expect(metrics).toMatchObject({
+    trends: {
+      iterations: {
+        _: expect.any(Array)
+      },
+      fetch: {
+        _: expect.any(Array)
+      }
+    },
+    counters: {}
+  })
+
+  server.stop(true)
+})
+
+test('VU timeout and failed to finish last iteration before gracefulStop', async () => {
+  const vu = new VU(0, 10)
+
+  const iterationsTimeout = 1000 // 1s
+  const gracefulStop = 2000 // 1s
+
+  const server = Bun.serve({
+    port: 8000,
+    async fetch () {
+      // Timeout on first iteration.
+      await Bun.sleep(iterationsTimeout * 2)
+      return new Response('Hello world')
+    }
+  })
+
+  await vu.doIterations('./test_vu_script/fetch_localhost.ts', 3, iterationsTimeout, gracefulStop)
+
+  const metrics = vu.metrics()
+  expect(JSON.parse(JSON.stringify(metrics))).toMatchObject({
+    trends: {
+      iterations: {
+        success: expect.any(Array),
+        _: expect.any(Array)
+      },
+      fetch: {
+        OK: expect.any(Array),
+        _: expect.any(Array)
+      }
+    },
+    counters: {}
+  })
+
+  expect(metrics.trends.iterations.success).toHaveLength(1)
+  expect(metrics.trends.iterations._).toHaveLength(1)
 
   server.stop(true)
 })
