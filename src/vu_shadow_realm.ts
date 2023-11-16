@@ -4,6 +4,7 @@
 
 import { globalRegistry } from '@negrel/denoload-metrics'
 import { type ScenarioState } from './scenario_state'
+import fetchCookie from 'fetch-cookie'
 
 const iterationsTrend = globalRegistry.Trend('iterations')
 const fetchTrend = globalRegistry.Trend('fetch')
@@ -78,7 +79,7 @@ const realGlobalThis = {
 }
 
 function alterGlobalThis (): void {
-  globalThis.fetch = doFetch
+  globalThis.fetch = fetchCookie(doFetch)
 }
 
 function restoreGlobalThis (): void {

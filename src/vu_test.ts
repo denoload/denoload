@@ -233,3 +233,43 @@ test('VU timeout and failed to finish last iteration before gracefulStop', async
 
   server.stop(true)
 })
+
+test('VUs cookie jar are isolated', async () => {
+  const vus = []
+  for (let i = 0; i < 3; i++) {
+    vus.push(new VU(i, 10))
+  }
+
+  let cookiesReceived: Array<string | null> = []
+
+  const server = Bun.serve({
+    port: 8000,
+    async fetch (req) {
+      // Store received cookies
+      cookiesReceived.push(req.headers.get('Cookie'))
+
+      return new Response('Hello world', {
+        headers: {
+          'Set-Cookie': `cookie=${new Date().toISOString()}`
+        }
+      })
+    }
+  })
+
+  // Perform iterations.
+  for (const vu of vus) {
+    await vu.doIterations('./test_vu_script/post_localhost_date.ts', 1, 3000, 0)
+  }
+
+  // First request of each VUs has no cookie.
+  expect(cookiesReceived.filter(c => c === null)).toHaveLength(3)
+
+  // Filter null cookies.
+  cookiesReceived = cookiesReceived.filter(c => c !== null)
+
+  // No duplicate cookie.
+  const hasDuplicate = new Set(cookiesReceived).size !== cookiesReceived.length
+  expect(hasDuplicate).toBeFalse()
+
+  server.stop(true)
+})

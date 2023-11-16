@@ -5,7 +5,8 @@
   "dependencies": {
     "@negrel/denoload-metrics": "file://./packages/metrics",
     "bunyan": "^1.8.15",
-    "commander": "^11.1.0"
+    "commander": "^11.1.0",
+    "fetch-cookie": "^2.1.0"
   },
   "devDependencies": {
     "typescript": "^5.2.2",
