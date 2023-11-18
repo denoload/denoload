@@ -81,8 +81,8 @@ const defaultPerVuIterationOption: ScenarioOptions[ExecutorKind.PerVuIteration] 
   executor: ExecutorKind.PerVuIteration,
   iterations: 1,
   vus: 1,
-  maxDuration: '30s',
-  gracefulStop: '10s'
+  maxDuration: '10m',
+  gracefulStop: '30s'
 }
 
 /**
@@ -158,8 +158,9 @@ export class ExecutorPerVuIteration extends Executor {
 
 const defaultConstantVusOption: ScenarioOptions[ExecutorKind.ConstantVus] = {
   executor: ExecutorKind.ConstantVus,
-  vus: 128,
-  duration: '30s'
+  vus: 1,
+  // Duration is required.
+  duration: '0s'
 }
 
 /**
@@ -181,6 +182,9 @@ class ExecutorConstantVus extends Executor {
   ) {
     super(workerPool, scenarioName)
     this.moduleURL = moduleURL
+    if (typeof options.duration !== 'string') {
+      throw new Error(`duration option missing for scenario ${scenarioName}`)
+    }
     this.options = { ...defaultConstantVusOption, ...options }
     this.startDate = new Date()
     this.endDate = new Date()
