@@ -1,6 +1,6 @@
 import * as readline from 'node:readline'
 
-import executors, { type ScenarioOptions, type Executor, type ExecutorKind } from './executors.ts'
+import executors, { type ScenarioOptions, type Executor, type ExecutorType } from './executors/index.ts'
 import log from './log.ts'
 import * as metrics from '@negrel/denoload-metrics'
 import { formatTab, padLeft, printMetrics } from './utils.ts'
@@ -15,7 +15,7 @@ const logger = log.getLogger('runner')
  */
 export interface TestOptions {
   threshold?: (_: { metrics: metrics.Report }) => void
-  scenarios: Record<string, ScenarioOptions[ExecutorKind]>
+  scenarios: Record<string, ScenarioOptions[ExecutorType]>
 }
 
 export async function run (moduleURL: URL): Promise<boolean> {
