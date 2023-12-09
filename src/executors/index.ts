@@ -3,6 +3,7 @@ import { type Executor } from './abstract.ts'
 import { ExecutorConstantVus } from './constant_vus.ts'
 import { ExecutorType, type ScenarioOptions } from './options.ts'
 import { ExecutorPerVuIteration } from './per_vu_iterations.ts'
+import { ExecutorSharedIterations } from './shared_iterations.ts'
 
 /**
  * Map of executors.
@@ -16,7 +17,8 @@ const executors: {
   ) => Executor
 } = {
   [ExecutorType.PerVuIteration]: ExecutorPerVuIteration,
-  [ExecutorType.ConstantVus]: ExecutorConstantVus
+  [ExecutorType.ConstantVus]: ExecutorConstantVus,
+  [ExecutorType.SharedIterations]: ExecutorSharedIterations
 }
 
 export default executors

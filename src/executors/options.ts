@@ -6,7 +6,9 @@ export enum ExecutorType {
   PerVuIteration = 'per-vu-iterations',
   // A fixed number of VUs execute as many iterations as possible for a
   // specified amount of time.
-  ConstantVus = 'constant-vus'
+  ConstantVus = 'constant-vus',
+  // A fixed amount of iterations shared between the number of VUs.
+  SharedIterations = 'shared-iterations'
 }
 
 /**
@@ -24,6 +26,13 @@ export interface ScenarioOptions {
     executor: ExecutorType.ConstantVus
     vus: number
     duration: string
+    gracefulStop?: string
+  }
+  [ExecutorType.SharedIterations]: {
+    executor: ExecutorType.SharedIterations
+    vus: number
+    iterations: number
+    maxDuration: string
     gracefulStop?: string
   }
 }
