@@ -1,3 +1,5 @@
+![denoload sauropod](./.github/images/sauropod.png)
+
 # 🦕 `denoload` - Accelerate web API load testing with seamless client library integration.
 
 ![denoload ascii art](./.github/images/ascii.png)
@@ -80,7 +82,7 @@ See [examples/gotrue](./examples/gotrue/) to run the script locally.
 
 Executors:
 - [x] Per VU iterations
-- [ ] Shared iterations
+- [x] Shared iterations
 - [x] Constant VUs
 - [ ] Ramping VUs
 - [ ] Constant Arrival Rate
