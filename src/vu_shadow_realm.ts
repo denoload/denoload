@@ -14,7 +14,7 @@ const iterations = {
 }
 
 // Abort signal to limit scenario of duration (e.g gracefulStop).
-let abortSignal = AbortSignal.abort('uninitialized')
+let abortSignal = new AbortController().signal
 
 /**
  * Start a floating promise that perform a single VU iteration.
