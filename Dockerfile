@@ -1,4 +1,4 @@
-FROM docker.io/oven/bun:1.0.13-alpine
+FROM docker.io/oven/bun:1.0.15-alpine
 
 WORKDIR /denoload
 
