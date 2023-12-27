@@ -55,7 +55,12 @@ test('VU doIterations with success fetch and iteration produce trends with succe
 test('VU doIterations with catched fetch error and successful iteration produce trends with fail and success tag respectively', async () => {
   const vu = new VU(0, 10)
 
-  await vu.doIterations('./test_vu_script/fetch_localhost_catch.ts', 1, 1000, 0)
+  await vu.doIterations(
+    './test_vu_script/fetch_localhost_catch.ts',
+    1,
+    1000,
+    0
+  )
 
   const metrics = vu.metrics()
   expect(metrics).toMatchObject({
@@ -76,15 +81,34 @@ test('VU doIterations with catched fetch error and successful iteration produce 
 test('VU iterations total current iterations done even with multiple doIterations call', async () => {
   const vu = new VU(0, 10)
 
-  expect(vu.scenarioState()).toEqual({ iterations: { fail: 0, success: 0 }, aborted: false })
+  expect(vu.scenarioState()).toEqual({
+    iterations: { fail: 0, success: 0 },
+    aborted: false
+  })
 
-  await vu.doIterations('./test_vu_script/fetch_localhost_catch.ts', 2, 1000, 0)
+  await vu.doIterations(
+    './test_vu_script/fetch_localhost_catch.ts',
+    2,
+    1000,
+    0
+  )
 
-  expect(vu.scenarioState()).toEqual({ iterations: { fail: 0, success: 2 }, aborted: false })
+  expect(vu.scenarioState()).toEqual({
+    iterations: { fail: 0, success: 2 },
+    aborted: false
+  })
 
-  await vu.doIterations('./test_vu_script/fetch_localhost_catch.ts', 3, 1000, 0)
+  await vu.doIterations(
+    './test_vu_script/fetch_localhost_catch.ts',
+    3,
+    1000,
+    0
+  )
 
-  expect(vu.scenarioState()).toEqual({ iterations: { fail: 0, success: 5 }, aborted: false })
+  expect(vu.scenarioState()).toEqual({
+    iterations: { fail: 0, success: 5 },
+    aborted: false
+  })
 })
 
 test('VU timeout and abort fetch if iterations exceed max duration', async () => {
@@ -102,7 +126,12 @@ test('VU timeout and abort fetch if iterations exceed max duration', async () =>
   })
 
   // Third iteration will be skipped
-  await vu.doIterations('./test_vu_script/fetch_localhost.ts', 3, iterationsTimeout, 0)
+  await vu.doIterations(
+    './test_vu_script/fetch_localhost.ts',
+    3,
+    iterationsTimeout,
+    0
+  )
 
   const metrics = vu.metrics()
   expect(metrics).toMatchObject({
@@ -143,7 +172,12 @@ test('VU timeout and skip remaining iterations if iterations exceed max duration
     }
   })
 
-  await vu.doIterations('./test_vu_script/fetch_localhost.ts', 2, iterationsTimeout, 0)
+  await vu.doIterations(
+    './test_vu_script/fetch_localhost.ts',
+    2,
+    iterationsTimeout,
+    0
+  )
 
   const metrics = vu.metrics()
   expect(metrics).toMatchObject({
@@ -178,7 +212,12 @@ test('VU timeout but finish last iteration thanks to gracefulStop', async () => 
     }
   })
 
-  await vu.doIterations('./test_vu_script/fetch_localhost.ts', 1, iterationsTimeout, gracefulStop)
+  await vu.doIterations(
+    './test_vu_script/fetch_localhost.ts',
+    1,
+    iterationsTimeout,
+    gracefulStop
+  )
 
   const metrics = vu.metrics()
   expect(metrics).toMatchObject({
@@ -211,7 +250,12 @@ test('VU timeout and failed to finish last iteration before gracefulStop', async
     }
   })
 
-  await vu.doIterations('./test_vu_script/fetch_localhost.ts', 3, iterationsTimeout, gracefulStop)
+  await vu.doIterations(
+    './test_vu_script/fetch_localhost.ts',
+    3,
+    iterationsTimeout,
+    gracefulStop
+  )
 
   const metrics = vu.metrics()
   expect(JSON.parse(JSON.stringify(metrics))).toMatchObject({
@@ -258,14 +302,19 @@ test('VUs cookie jar are isolated', async () => {
 
   // Perform iterations.
   for (const vu of vus) {
-    await vu.doIterations('./test_vu_script/post_localhost_date.ts', 1, 3000, 0)
+    await vu.doIterations(
+      './test_vu_script/post_localhost_date.ts',
+      1,
+      3000,
+      0
+    )
   }
 
   // First request of each VUs has no cookie.
-  expect(cookiesReceived.filter(c => c === null)).toHaveLength(3)
+  expect(cookiesReceived.filter((c) => c === null)).toHaveLength(3)
 
   // Filter null cookies.
-  cookiesReceived = cookiesReceived.filter(c => c !== null)
+  cookiesReceived = cookiesReceived.filter((c) => c !== null)
 
   // No duplicate cookie.
   const hasDuplicate = new Set(cookiesReceived).size !== cookiesReceived.length

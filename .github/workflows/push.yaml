@@ -31,4 +31,3 @@ jobs:
           name: docker-image
           path: ./result
           if-no-files-found: error
-

@@ -2,11 +2,11 @@ import { test, expect } from 'bun:test'
 import { formatTab, parseDuration } from './utils'
 
 test('formatTab [["foobar", "qux"], ["foo", "quxquz"]]', async () => {
-  const result = formatTab([['foobar', 'qux'], ['foo', 'quxquz']])
-  expect(result).toEqual([
-    'foobar qux   ',
-    'foo    quxquz'
+  const result = formatTab([
+    ['foobar', 'qux'],
+    ['foo', 'quxquz']
   ])
+  expect(result).toEqual(['foobar qux   ', 'foo    quxquz'])
 })
 
 test('parseDuration 3s', () => {

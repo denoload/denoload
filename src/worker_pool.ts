@@ -75,10 +75,7 @@ export class WorkerPool {
     }
 
     // Do RPC.
-    const promise = worker.remoteProcedureCall<A, R>(
-      rpc,
-      options
-    )
+    const promise = worker.remoteProcedureCall<A, R>(rpc, options)
     this.runningTasks[workerIndex].add(promise)
     const result = await promise
     this.runningTasks[workerIndex].delete(promise)
@@ -119,12 +116,9 @@ export class WorkerPool {
 
   private createWorker (): [RpcWorker, number] {
     logger.info('spawning a new worker')
-    const worker = new RpcWorker(
-      this.options.workerScript,
-      {
-        type: 'module'
-      }
-    )
+    const worker = new RpcWorker(this.options.workerScript, {
+      type: 'module'
+    })
 
     const index = this.workers.length
 

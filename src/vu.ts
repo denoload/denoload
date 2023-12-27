@@ -33,15 +33,41 @@ export class VU {
   }
 
   // doIterations must not be called concurrently.
-  async doIterations (moduleUrl: string, iterations: number, maxDurationMillis: number, gracefulStopMillis: number): Promise<void> {
-    const doIterations = await this.realm.importValue('./vu_shadow_realm.ts', 'doIterations')
-    const iterationsTotal: () => number = await this.realm.importValue('./vu_shadow_realm.ts', 'iterationsTotal')
-    const iterationsAborted: () => boolean = await this.realm.importValue('./vu_shadow_realm.ts', 'aborted')
-    this.jsonMetrics = await this.realm.importValue('./vu_shadow_realm.ts', 'jsonMetricsRegistry')
-    this.jsonScenarioState = await this.realm.importValue('./vu_shadow_realm.ts', 'jsonScenarioState')
+  async doIterations (
+    moduleUrl: string,
+    iterations: number,
+    maxDurationMillis: number,
+    gracefulStopMillis: number
+  ): Promise<void> {
+    const doIterations = await this.realm.importValue(
+      './vu_shadow_realm.ts',
+      'doIterations'
+    )
+    const iterationsTotal: () => number = await this.realm.importValue(
+      './vu_shadow_realm.ts',
+      'iterationsTotal'
+    )
+    const iterationsAborted: () => boolean = await this.realm.importValue(
+      './vu_shadow_realm.ts',
+      'aborted'
+    )
+    this.jsonMetrics = await this.realm.importValue(
+      './vu_shadow_realm.ts',
+      'jsonMetricsRegistry'
+    )
+    this.jsonScenarioState = await this.realm.importValue(
+      './vu_shadow_realm.ts',
+      'jsonScenarioState'
+    )
 
     // Start iterations
-    void doIterations(moduleUrl, this.id, iterations, maxDurationMillis, gracefulStopMillis)
+    void doIterations(
+      moduleUrl,
+      this.id,
+      iterations,
+      maxDurationMillis,
+      gracefulStopMillis
+    )
 
     // Initial number of iterations.
     const initialIterations = this._iterations
@@ -55,7 +81,10 @@ export class VU {
         this._iterations = iterationsTotal()
 
         // Stop condition.
-        if (this._iterations - initialIterations === iterations || iterationsAborted()) {
+        if (
+          this._iterations - initialIterations === iterations ||
+          iterationsAborted()
+        ) {
           clearInterval(intervalId)
           resolve(undefined)
         }

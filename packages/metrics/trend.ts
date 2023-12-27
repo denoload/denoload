@@ -8,7 +8,10 @@ export interface Trend {
 
 export function trend (data: number[], percentiles: number[]): Trend {
   const [min, max, avg] = calculateMinMaxAvg(data)
-  const p = calculatePercentiles(data, percentiles.sort((a, b) => a - b))
+  const p = calculatePercentiles(
+    data,
+    percentiles.sort((a, b) => a - b)
+  )
 
   return { min, max, avg, percentiles: p, total: data.length }
 }
@@ -38,7 +41,10 @@ function calculateMinMaxAvg (data: number[]): [number, number, number] {
   return [min, max, avg]
 }
 
-function calculatePercentiles (data: number[], percentiles: number[]): Record<number, number> {
+function calculatePercentiles (
+  data: number[],
+  percentiles: number[]
+): Record<number, number> {
   if (data.length === 0) {
     return percentiles.map(() => 0)
   }
@@ -57,7 +63,8 @@ function calculatePercentiles (data: number[], percentiles: number[]): Record<nu
       const lower = Math.floor(index)
       const upper = lower + 1
       const fraction = index - lower
-      const interpolatedValue = data[lower] + fraction * (data[upper] - data[lower])
+      const interpolatedValue =
+        data[lower] + fraction * (data[upper] - data[lower])
       results[percentile] = interpolatedValue
     }
   }

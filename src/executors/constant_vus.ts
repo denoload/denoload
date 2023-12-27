@@ -44,7 +44,9 @@ export class ExecutorConstantVus extends Executor {
   async execute (): Promise<void> {
     this.logger.info(`executing "${this.scenarioName}" scenario...`)
     this.startDate = new Date()
-    this.endDate.setTime(this.startDate.getTime() + (parseDuration(this.options.duration) * 1000))
+    this.endDate.setTime(
+      this.startDate.getTime() + parseDuration(this.options.duration) * 1000
+    )
 
     this.logger.debug('running VUs...')
     const scenarioStart = Bun.nanoseconds()
@@ -57,7 +59,8 @@ export class ExecutorConstantVus extends Executor {
         vuId: vus,
         pollIntervalMillis: 10,
         maxDurationMillis: this.endDate.getTime() - this.startDate.getTime(),
-        gracefulStopMillis: parseDuration(this.options.gracefulStop ?? '0s') * 1000
+        gracefulStopMillis:
+          parseDuration(this.options.gracefulStop ?? '0s') * 1000
       }
 
       promises[vus] = this.workerPool.remoteProcedureCall({
@@ -73,7 +76,9 @@ export class ExecutorConstantVus extends Executor {
 
     // Stop console reported test is done.
     this.logger.info(
-        `scenario successfully executed in ${formatDuration(scenarioEnd - scenarioStart)}.`
+      `scenario successfully executed in ${formatDuration(
+        scenarioEnd - scenarioStart
+      )}.`
     )
   }
 
@@ -88,7 +93,7 @@ export class ExecutorConstantVus extends Executor {
   scenarioProgress (state: ScenarioState): ScenarioProgress {
     const now = new Date().getTime() - this.startDate.getTime()
     const end = this.endDate.getTime() - this.startDate.getTime()
-    let percentage = now / end * 100
+    let percentage = (now / end) * 100
     if (now >= end) {
       percentage = 100
     }

@@ -11,13 +11,14 @@ export interface SharedIterationsOption {
   executor: ExecutorType.SharedIterations
 }
 
-const defaultSharedIterationsOption: ScenarioOptions[ExecutorType.SharedIterations] = {
-  executor: ExecutorType.SharedIterations,
-  iterations: 1,
-  vus: 1,
-  maxDuration: '10m',
-  gracefulStop: '30s'
-}
+const defaultSharedIterationsOption: ScenarioOptions[ExecutorType.SharedIterations] =
+  {
+    executor: ExecutorType.SharedIterations,
+    iterations: 1,
+    vus: 1,
+    maxDuration: '10m',
+    gracefulStop: '30s'
+  }
 
 /**
  * Shared iterations executor shares iterations between the number of VUs.
@@ -29,7 +30,12 @@ export class ExecutorSharedIterations extends Executor {
 
   private _currentVUs = 0
 
-  constructor (workerPool: WorkerPool, scenarioName: string, moduleURL: URL, options: Partial<ScenarioOptions[ExecutorType.SharedIterations]>) {
+  constructor (
+    workerPool: WorkerPool,
+    scenarioName: string,
+    moduleURL: URL,
+    options: Partial<ScenarioOptions[ExecutorType.SharedIterations]>
+  ) {
     super(workerPool, scenarioName)
     this.moduleURL = moduleURL
     this.options = { ...defaultSharedIterationsOption, ...options }
@@ -45,7 +51,8 @@ export class ExecutorSharedIterations extends Executor {
     const promises = new Array(this.options.vus)
 
     const maxDurationMillis = parseDuration(this.options.maxDuration) * 1000
-    const gracefulStopMillis = parseDuration(this.options.gracefulStop ?? '0s') * 1000
+    const gracefulStopMillis =
+      parseDuration(this.options.gracefulStop ?? '0s') * 1000
     const abortTimestamp = scenarioStart + maxDurationMillis * 1000 * 1000
 
     const handleVU = async (vuId: number): Promise<void> => {
@@ -66,7 +73,8 @@ export class ExecutorSharedIterations extends Executor {
           nbIter: 1,
           vuId,
           pollIntervalMillis: 10,
-          maxDurationMillis: (abortTimestamp - Bun.nanoseconds()) / (1000 * 1000),
+          maxDurationMillis:
+            (abortTimestamp - Bun.nanoseconds()) / (1000 * 1000),
           gracefulStopMillis
         }
 
@@ -92,7 +100,9 @@ export class ExecutorSharedIterations extends Executor {
 
     // Stop console reported test is done.
     this.logger.info(
-      `scenario successfully executed in ${formatDuration(scenarioEnd - scenarioStart)}.`
+      `scenario successfully executed in ${formatDuration(
+        scenarioEnd - scenarioStart
+      )}.`
     )
   }
 
@@ -107,7 +117,7 @@ export class ExecutorSharedIterations extends Executor {
   override scenarioProgress (state: ScenarioState): ScenarioProgress {
     const iterations = state.iterations.success + state.iterations.fail
     return {
-      percentage: iterations / this.options.iterations * 100,
+      percentage: (iterations / this.options.iterations) * 100,
       extraInfos: '',
       aborted: state.aborted
     }

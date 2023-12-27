@@ -1,4 +1,4 @@
-version: '3'
+version: "3"
 services:
   denoload:
     image: "docker.io/negrel/denoload:${DENOLOAD_VERSION:-latest}"
@@ -13,5 +13,4 @@ networks:
   default:
     # Share test network from docker-compose.env.yml
     external: true
-    name: '${COMPOSE_PROJECT_NAME}_default'
-
+    name: "${COMPOSE_PROJECT_NAME}_default"

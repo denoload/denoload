@@ -12,16 +12,19 @@ docker compose -f ./docker-compose-env.yml up -d
 ```
 
 Install dependencies
+
 ```sh
 npm install
 ```
 
 Open a new terminal showing CPU and memory usage of `gotrue` and `denoload`:
+
 ```
 $TERM -e htop -F 'gotrue|denoload' &>/dev/null &
 ```
 
 Start the denoload instance:
+
 ```sh
 docker compose -f ./docker-compose-test.yml up
 ```

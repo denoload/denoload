@@ -26,4 +26,3 @@ jobs:
             docker tag "negrel/denoload:dev" "docker.io/negrel/denoload:$tag"
             docker push "docker.io/negrel/denoload:$tag"
           done
-

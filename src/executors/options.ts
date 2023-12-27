@@ -8,7 +8,7 @@ export enum ExecutorType {
   // specified amount of time.
   ConstantVus = 'constant-vus',
   // A fixed amount of iterations shared between the number of VUs.
-  SharedIterations = 'shared-iterations'
+  SharedIterations = 'shared-iterations',
 }
 
 /**

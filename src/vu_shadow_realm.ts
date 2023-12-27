@@ -19,38 +19,48 @@ let abortSignal = new AbortController().signal
 /**
  * Start a floating promise that perform a single VU iteration.
  */
-export function doIterations (moduleURL: string, vu: number, nbIter: number, maxDurationMillis: number, gracefulStopMillis: number): void {
+export function doIterations (
+  moduleURL: string,
+  vu: number,
+  nbIter: number,
+  maxDurationMillis: number,
+  gracefulStopMillis: number
+): void {
   alterGlobalThis()
 
-  import(moduleURL).then(async (module) => {
-    abortSignal = AbortSignal.timeout(maxDurationMillis + gracefulStopMillis)
+  import(moduleURL)
+    .then(async (module) => {
+      abortSignal = AbortSignal.timeout(maxDurationMillis + gracefulStopMillis)
 
-    let aborted = false
-    abortSignal.onabort = () => { aborted = true }
-    setTimeout(() => {
-      aborted = true
-    }, maxDurationMillis)
-
-    for (let i = 0; i < nbIter; i++) {
-      const start = Bun.nanoseconds()
-
-      if (aborted) {
-        break
+      let aborted = false
+      abortSignal.onabort = () => {
+        aborted = true
       }
+      setTimeout(() => {
+        aborted = true
+      }, maxDurationMillis)
 
-      try {
-        await module.default(vu, i)
+      for (let i = 0; i < nbIter; i++) {
+        const start = Bun.nanoseconds()
 
-        iterationsTrend.add(Bun.nanoseconds() - start, 'success')
-        iterations.success++
-      } catch (err) {
-        console.error(err)
+        if (aborted) {
+          break
+        }
 
-        iterationsTrend.add(Bun.nanoseconds() - start, 'fail')
-        iterations.fail++
+        try {
+          await module.default(vu, i)
+
+          iterationsTrend.add(Bun.nanoseconds() - start, 'success')
+          iterations.success++
+        } catch (err) {
+          console.error(err)
+
+          iterationsTrend.add(Bun.nanoseconds() - start, 'fail')
+          iterations.fail++
+        }
       }
-    }
-  }).finally(restoreGlobalThis)
+    })
+    .finally(restoreGlobalThis)
 }
 
 export function iterationsTotal (): number {

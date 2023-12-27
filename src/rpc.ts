@@ -32,7 +32,7 @@ export class RpcWorker {
   private readonly worker: Worker
   private readonly responseHandlers = new Map<number, ResponseHandler<any>>()
 
-  constructor (specifier: string | URL, options?: WorkerOptions | undefined) {
+  constructor (specifier: string | URL, options?: Bun.WorkerOptions) {
     this.worker = new Worker(specifier, options)
     this.worker.onmessage = this.onResponse.bind(this)
     this.worker.onmessageerror = (ev) => {
@@ -82,9 +82,7 @@ export class RpcWorker {
         clearTimeout(timeoutId)
         this.removeResponseHandler(msgId)
 
-        logger.debug(
-          `rpc ${data.id} returned ${JSON.stringify(data)}`
-        )
+        logger.debug(`rpc ${data.id} returned ${JSON.stringify(data)}`)
 
         if ('error' in data) {
           reject(data.error)
@@ -94,6 +92,7 @@ export class RpcWorker {
       })
 
       logger.debug(`rpc ${msgId} called ${JSON.stringify(rpc)}`)
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       this.worker.postMessage({ id: msgId, ...rpc }, transfer)
     })
   }
@@ -128,26 +127,29 @@ export function workerProcedureHandler (
         throw new Error(`procedure "${event.data.name}" doesn't exist`)
       }
 
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       const result = await procedure(...event.data.args)
 
-      logger.debug(
-        `rpc ${event.data.id} done: ${JSON.stringify(result)}`
-      )
+      logger.debug(`rpc ${event.data.id} done: ${JSON.stringify(result)}`)
 
-      postMessage({
-        id: event.data.id,
-        result
-      }, [result])
+      postMessage(
+        {
+          id: event.data.id,
+          result
+        },
+        [result]
+      )
     } catch (err) {
       const errStr = (err as any)?.stack ?? (err as any).toString()
-      logger.error(
-        `rpc ${event.data.id} error: ${errStr}`
-      )
+      logger.error(`rpc ${event.data.id} error: ${errStr}`)
 
-      postMessage({
-        id: event.data.id,
-        error: errStr // TODO(negrel): serialize before posting message.
-      }, [])
+      postMessage(
+        {
+          id: event.data.id,
+          error: errStr // TODO(negrel): serialize before posting message.
+        },
+        []
+      )
     }
   }
 }

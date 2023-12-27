@@ -20,6 +20,7 @@ custom JavaScript VM and API. Worse, there are edge cases where the VM isn't
 standard and can not be. This can lead to a **lot** frustration.
 
 `denoload` aims to be an alternative with:
+
 - great performance (comparable to [k6][k6])
 - write [k6][k6] like scripts with VUs, iterations and executors
 - standard web APIs support (e.g. [fetch](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API))
@@ -32,46 +33,46 @@ This project is based on [Bun][bun].
 ## Example script
 
 ```ts
-import { faker } from '@faker-js/faker'
-import { GoTrueClient } from '@supabase/gotrue-js'
-import { globalRegistry } from '@negrel/denoload-metrics'
-import expect from 'expect'
+import { faker } from "@faker-js/faker";
+import { GoTrueClient } from "@supabase/gotrue-js";
+import { globalRegistry } from "@negrel/denoload-metrics";
+import expect from "expect";
 
 export const options = {
   scenarios: {
     perVuIter: {
-      executor: 'per-vu-iterations',
+      executor: "per-vu-iterations",
       vus: 256,
-      iterations: 10
-    }
-  }
-}
+      iterations: 10,
+    },
+  },
+};
 
-const AuthClient = new GoTrueClient({ url: 'http://gotrue.local' })
-const signUpCounter = globalRegistry.Counter('signup')
-const signOutCounter = globalRegistry.Counter('signout')
+const AuthClient = new GoTrueClient({ url: "http://gotrue.local" });
+const signUpCounter = globalRegistry.Counter("signup");
+const signOutCounter = globalRegistry.Counter("signout");
 
 export default async function (): Promise<void> {
   // Sign up and sign in.
   {
     const { data, error } = await AuthClient.signUp({
       email: faker.internet.email(),
-      password: faker.internet.password()
-    })
-    expect(error).toBeNull()
-    expect(data).not.toBeNull()
-    signUpCounter.add(1)
+      password: faker.internet.password(),
+    });
+    expect(error).toBeNull();
+    expect(data).not.toBeNull();
+    signUpCounter.add(1);
   }
 
-  await Bun.sleep(1000)
+  await Bun.sleep(1000);
 
   // Interact with your API...
 
   // Sign out.
   {
-    const { error } = await AuthClient.signOut()
-    expect(error).toBeNull()
-    signOutCounter.add(1)
+    const { error } = await AuthClient.signOut();
+    expect(error).toBeNull();
+    signOutCounter.add(1);
   }
 }
 ```
@@ -81,6 +82,7 @@ See [examples/gotrue](./examples/gotrue/) to run the script locally.
 ## TODOs
 
 Executors:
+
 - [x] Per VU iterations
 - [x] Shared iterations
 - [x] Constant VUs

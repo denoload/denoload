@@ -1,6 +1,10 @@
 import * as readline from 'node:readline'
 
-import executors, { type ScenarioOptions, type Executor, type ExecutorType } from './executors/index.ts'
+import executors, {
+  type ScenarioOptions,
+  type Executor,
+  type ExecutorType
+} from './executors/index.ts'
 import log from './log.ts'
 import * as metrics from '@negrel/denoload-metrics'
 import { formatTab, padLeft, printMetrics } from './utils.ts'
@@ -31,15 +35,26 @@ export async function run (moduleURL: URL): Promise<boolean> {
 
   // Create scenarios executors
   const workerPool = new WorkerPool()
-  const execs: Executor[] = Object.entries(moduleOptions.scenarios).map(([scenarioName, scenarioOptions]) =>
-    new executors[scenarioOptions.executor](workerPool, scenarioName, moduleURL, scenarioOptions as any))
+  const execs: Executor[] = Object.entries(moduleOptions.scenarios).map(
+    ([scenarioName, scenarioOptions]) =>
+      new executors[scenarioOptions.executor](
+        workerPool,
+        scenarioName,
+        moduleURL,
+        scenarioOptions
+      )
+  )
 
   // Print progress every second.
   const printProgress = progressPrinter(workerPool, execs)
   const intervalId = setInterval(printProgress, 1000)
 
   // Start scenarios.
-  const promises = await Promise.allSettled(execs.map(async (e) => { await e.execute() }))
+  const promises = await Promise.allSettled(
+    execs.map(async (e) => {
+      await e.execute()
+    })
+  )
 
   // Stop progress report.
   clearInterval(intervalId)
@@ -64,7 +79,11 @@ export async function run (moduleURL: URL): Promise<boolean> {
       moduleOptions.threshold({ metrics: report })
     } catch (err) {
       runOk = false
-      if (err !== null && typeof err === 'object' && err.constructor.name === 'JestAssertionError') {
+      if (
+        err !== null &&
+        typeof err === 'object' &&
+        err.constructor.name === 'JestAssertionError'
+      ) {
         console.log('Threshold fails:', (err as any).matcherResult.message)
       } else if (err instanceof Error) {
         console.log('Threshold fails:', err.message)
@@ -90,8 +109,13 @@ async function loadOptions (moduleURL: URL): Promise<TestOptions | null> {
   return (await import(moduleURL.toString()))?.options
 }
 
-async function collectAndMergeMetricsRegistry (workerPool: WorkerPool): Promise<metrics.RegistryObj> {
-  const metricsPromises = await workerPool.forEachWorkerRemoteProcedureCall<never, metrics.RegistryObj>({
+async function collectAndMergeMetricsRegistry (
+  workerPool: WorkerPool
+): Promise<metrics.RegistryObj> {
+  const metricsPromises = await workerPool.forEachWorkerRemoteProcedureCall<
+  never,
+  metrics.RegistryObj
+  >({
     name: 'metrics',
     args: []
   })
@@ -107,8 +131,13 @@ async function collectAndMergeMetricsRegistry (workerPool: WorkerPool): Promise<
   return metrics.mergeRegistryObjects(...vuMetrics)
 }
 
-async function collectAndMergeScenariosState (workerPool: WorkerPool): Promise<Record<string, ScenarioState>> {
-  const promises = await workerPool.forEachWorkerRemoteProcedureCall<never, Record<string, ScenarioState>>({
+async function collectAndMergeScenariosState (
+  workerPool: WorkerPool
+): Promise<Record<string, ScenarioState>> {
+  const promises = await workerPool.forEachWorkerRemoteProcedureCall<
+  never,
+  Record<string, ScenarioState>
+  >({
     name: 'scenariosState',
     args: []
   })
@@ -122,7 +151,10 @@ async function collectAndMergeScenariosState (workerPool: WorkerPool): Promise<R
 
     for (const scenario in p.value) {
       if (scenariosState[scenario] !== undefined) {
-        scenariosState[scenario] = mergeScenarioState(p.value[scenario], scenariosState[scenario])
+        scenariosState[scenario] = mergeScenarioState(
+          p.value[scenario],
+          scenariosState[scenario]
+        )
       } else {
         scenariosState[scenario] = p.value[scenario]
       }
@@ -132,7 +164,10 @@ async function collectAndMergeScenariosState (workerPool: WorkerPool): Promise<R
   return scenariosState
 }
 
-function progressPrinter (workerPool: WorkerPool, execs: Executor[]): () => Promise<void> {
+function progressPrinter (
+  workerPool: WorkerPool,
+  execs: Executor[]
+): () => Promise<void> {
   const startTime = new Date().getTime()
   const maxVUs = execs.reduce((acc, e) => acc + e.maxVUs(), 0)
 
@@ -142,17 +177,25 @@ function progressPrinter (workerPool: WorkerPool, execs: Executor[]): () => Prom
 
   return async () => {
     const scenariosStates = await collectAndMergeScenariosState(workerPool)
-    const iterationsTotal = Object.values(scenariosStates)
-      .reduce((acc, state) => state.iterations.success + state.iterations.fail + acc, 0)
+    const iterationsTotal = Object.values(scenariosStates).reduce(
+      (acc, state) => state.iterations.success + state.iterations.fail + acc,
+      0
+    )
 
     const currentVUs = execs.reduce((acc, e) => acc + e.currentVUs(), 0)
     readline.moveCursor(process.stdout, 0, (execs.length + 1) * -1)
     readline.clearScreenDown(process.stdout)
 
-    console.log(`running (${formatRunningSinceTime(startTime)}), ${currentVUs}/${maxVUs} VUs, ${iterationsTotal} complete iterations`)
+    console.log(
+      `running (${formatRunningSinceTime(
+        startTime
+      )}), ${currentVUs}/${maxVUs} VUs, ${iterationsTotal} complete iterations`
+    )
     const lines: string[][] = []
     execs.forEach((exec) => {
-      const scenarioProgress = exec.scenarioProgress(scenariosStates[exec.scenarioName])
+      const scenarioProgress = exec.scenarioProgress(
+        scenariosStates[exec.scenarioName]
+      )
       lines.push(formatScenarioProgress(exec.scenarioName, scenarioProgress))
     })
     console.log(formatTab(lines).join('\n'))
@@ -165,23 +208,34 @@ function formatRunningSinceTime (startTime: number): string {
   const minutes = Math.floor(seconds / 60)
   seconds = seconds % 60
 
-  return `${padLeft(minutes.toString(), '0', 2)}m${padLeft(seconds.toString(), '0', 2)}s`
+  return `${padLeft(minutes.toString(), '0', 2)}m${padLeft(
+    seconds.toString(),
+    '0',
+    2
+  )}s`
 }
 
 const progressBarEmptyChar =
-      '--------------------------------------------------'
+  '--------------------------------------------------'
 const progressBarFullChar =
-      '=================================================='
+  '=================================================='
 
-function formatScenarioProgress (scenarioName: string, progress: ScenarioProgress): string[] {
+function formatScenarioProgress (
+  scenarioName: string,
+  progress: ScenarioProgress
+): string[] {
   const percentage = Math.floor(progress.percentage)
 
   return [
     scenarioName,
     progress.percentage === 100 ? '✓' : progress.aborted ? '✗' : ' ',
-    '[' + progressBarFullChar.slice(0, Math.floor(percentage / 2)) +
-      progressBarEmptyChar.slice(0, progressBarEmptyChar.length - Math.floor(percentage / 2)) +
-    ']',
+    '[' +
+      progressBarFullChar.slice(0, Math.floor(percentage / 2)) +
+      progressBarEmptyChar.slice(
+        0,
+        progressBarEmptyChar.length - Math.floor(percentage / 2)
+      ) +
+      ']',
     progress.extraInfos
   ]
 }

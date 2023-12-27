@@ -1,5 +1,9 @@
 import { test, expect } from 'bun:test'
-import { Registry, mergeRegistryObjects } from './registry.ts'
+import {
+  Registry,
+  type RegistryObj,
+  mergeRegistryObjects
+} from './registry.ts'
 
 test('Create a new TrendMetric from a Registry', () => {
   const registry = new Registry()
@@ -71,8 +75,8 @@ test('Merge multiple Registry into a single one', () => {
 
   // Merge metrics.
   const merged = mergeRegistryObjects(
-    JSON.parse(JSON.stringify(registryA)),
-    JSON.parse(JSON.stringify(registryB))
+    JSON.parse(JSON.stringify(registryA)) as RegistryObj,
+    JSON.parse(JSON.stringify(registryB)) as RegistryObj
   )
 
   expect(merged).toEqual({
@@ -96,14 +100,10 @@ test('Merge multiple Registry into a single one', () => {
         bar: [1, 3, 1, 3]
       },
       only_a: {
-        _: [
-          18
-        ]
+        _: [18]
       },
       only_b: {
-        _: [
-          9
-        ]
+        _: [9]
       }
     }
   })

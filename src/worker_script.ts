@@ -21,36 +21,50 @@ let logger = log.getLogger('worker/-1')
 
 const VUs: Record<string, VU[]> = {}
 
-self.onmessage = workerProcedureHandler({
-  // NOTE: setupWorker MUST NOT be async.
-  setupWorker (workerId: number): void {
-    logger = log.getLogger(`worker/${workerId}`)
-    logger.info('worker ready')
-  },
-  async iterations ({
-    moduleURL,
-    scenarioName,
-    nbIter,
-    vuId,
-    pollIntervalMillis,
-    maxDurationMillis,
-    gracefulStopMillis
-  }: IterationsOptions): Promise<void> {
-    const vu = new VU(vuId, pollIntervalMillis)
-    if (VUs[scenarioName] === undefined) VUs[scenarioName] = []
-    VUs[scenarioName].push(vu)
+self.onmessage = workerProcedureHandler(
+  {
+    // NOTE: setupWorker MUST NOT be async.
+    setupWorker (workerId: number): void {
+      logger = log.getLogger(`worker/${workerId}`)
+      logger.info('worker ready')
+    },
+    async iterations ({
+      moduleURL,
+      scenarioName,
+      nbIter,
+      vuId,
+      pollIntervalMillis,
+      maxDurationMillis,
+      gracefulStopMillis
+    }: IterationsOptions): Promise<void> {
+      const vu = new VU(vuId, pollIntervalMillis)
+      if (VUs[scenarioName] === undefined) VUs[scenarioName] = []
+      VUs[scenarioName].push(vu)
 
-    await vu.doIterations(moduleURL, nbIter, maxDurationMillis, gracefulStopMillis)
-  },
-  scenariosState (): Record<string, ScenarioState> {
-    const states: Record<string, ScenarioState> = {}
-    for (const scenario in VUs) {
-      states[scenario] = mergeScenarioState(...VUs[scenario].map((v) => v.scenarioState()))
+      await vu.doIterations(
+        moduleURL,
+        nbIter,
+        maxDurationMillis,
+        gracefulStopMillis
+      )
+    },
+    scenariosState (): Record<string, ScenarioState> {
+      const states: Record<string, ScenarioState> = {}
+      for (const scenario in VUs) {
+        states[scenario] = mergeScenarioState(
+          ...VUs[scenario].map((v) => v.scenarioState())
+        )
+      }
+
+      return states
+    },
+    metrics (): metrics.RegistryObj {
+      return metrics.mergeRegistryObjects(
+        ...Object.values(VUs)
+          .flat()
+          .map((v) => v.metrics())
+      )
     }
-
-    return states
   },
-  metrics (): metrics.RegistryObj {
-    return metrics.mergeRegistryObjects(...Object.values(VUs).flat().map((v) => v.metrics()))
-  }
-}, self.postMessage)
+  self.postMessage.bind(self)
+)

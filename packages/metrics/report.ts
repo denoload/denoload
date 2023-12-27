@@ -17,7 +17,10 @@ export function report (registry: RegistryObj, percentiles: number[]): Report {
     result.trends[trendName] = {}
 
     for (const tagName in trend) {
-      result.trends[trendName][tagName] = reportTrend(trend[tagName], percentiles)
+      result.trends[trendName][tagName] = reportTrend(
+        trend[tagName],
+        percentiles
+      )
     }
   }
 

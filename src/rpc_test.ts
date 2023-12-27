@@ -24,10 +24,11 @@ test('error is thrown from worker', async () => {
     { type: 'module' }
   )
 
-  expect(worker.remoteProcedureCall<undefined, number>({
-    name: 'error',
-    args: []
-  })
+  expect(
+    worker.remoteProcedureCall<undefined, number>({
+      name: 'error',
+      args: []
+    })
   ).rejects.toStartWith('Error: runtime error from worker')
 
   worker.terminate()
@@ -39,11 +40,12 @@ test('non existent procedure', async () => {
     { type: 'module' }
   )
 
-  expect(worker.remoteProcedureCall<undefined, number>({
-    name: 'non existent',
-    args: []
-  })
-  ).rejects.toStartWith("Error: procedure \"non existent\" doesn't exist")
+  expect(
+    worker.remoteProcedureCall<undefined, number>({
+      name: 'non existent',
+      args: []
+    })
+  ).rejects.toStartWith('Error: procedure "non existent" doesn\'t exist')
 
   worker.terminate()
 })
@@ -54,10 +56,14 @@ test("timeout error is thrown if worker doesn't respond", () => {
     { type: 'module' }
   )
 
-  expect(worker.remoteProcedureCall<number, number>({
-    name: 'sleep',
-    args: [10000] // 10s
-  }, { timeout: 1000 }) // 1s
+  expect(
+    worker.remoteProcedureCall<number, number>(
+      {
+        name: 'sleep',
+        args: [10000] // 10s
+      },
+      { timeout: 1000 }
+    ) // 1s
   ).rejects.toMatch(/^rpc \d+ \(sleep\) timed out/)
 
   worker.terminate()

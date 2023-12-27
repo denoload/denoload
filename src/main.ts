@@ -42,13 +42,16 @@ void (async () => {
 
   program
     .name('denoload')
-    .description('Modern load testing tool using JavaScript and TypeScript, inspired by k6.')
+    .description(
+      'Modern load testing tool using JavaScript and TypeScript, inspired by k6.'
+    )
     .version(VERSION)
 
-  program.command('run')
+  program
+    .command('run')
     .description('Start a test')
     .argument('<file_path>', 'path to test file')
-    .action(async (testfile) => {
+    .action(async (testfile: string) => {
       const moduleURL = new URL(testfile, 'file://' + process.cwd() + '/')
       const ok = await run(moduleURL)
       if (!ok) process.exit(1)

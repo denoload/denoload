@@ -11,13 +11,14 @@ export interface PerVuIterationOption {
   executor: ExecutorType.PerVuIteration
 }
 
-const defaultPerVuIterationOption: ScenarioOptions[ExecutorType.PerVuIteration] = {
-  executor: ExecutorType.PerVuIteration,
-  iterations: 1,
-  vus: 1,
-  maxDuration: '10m',
-  gracefulStop: '30s'
-}
+const defaultPerVuIterationOption: ScenarioOptions[ExecutorType.PerVuIteration] =
+  {
+    executor: ExecutorType.PerVuIteration,
+    iterations: 1,
+    vus: 1,
+    maxDuration: '10m',
+    gracefulStop: '30s'
+  }
 
 /**
  * Per VU iteration executor managed a fixed amount of iteration per VU.
@@ -30,7 +31,12 @@ export class ExecutorPerVuIteration extends Executor {
   private _currentVUs = 0
   private totalIterations = 0
 
-  constructor (workerPool: WorkerPool, scenarioName: string, moduleURL: URL, options: Partial<ScenarioOptions[ExecutorType.PerVuIteration]>) {
+  constructor (
+    workerPool: WorkerPool,
+    scenarioName: string,
+    moduleURL: URL,
+    options: Partial<ScenarioOptions[ExecutorType.PerVuIteration]>
+  ) {
     super(workerPool, scenarioName)
     this.moduleURL = moduleURL
     this.options = { ...defaultPerVuIterationOption, ...options }
@@ -51,7 +57,8 @@ export class ExecutorPerVuIteration extends Executor {
         vuId: vus,
         pollIntervalMillis: 10,
         maxDurationMillis: parseDuration(this.options.maxDuration) * 1000,
-        gracefulStopMillis: parseDuration(this.options.gracefulStop ?? '0s') * 1000
+        gracefulStopMillis:
+          parseDuration(this.options.gracefulStop ?? '0s') * 1000
       }
 
       promises[vus] = this.workerPool.remoteProcedureCall({
@@ -68,7 +75,9 @@ export class ExecutorPerVuIteration extends Executor {
 
     // Stop console reported test is done.
     this.logger.info(
-      `scenario successfully executed in ${formatDuration(scenarioEnd - scenarioStart)}.`
+      `scenario successfully executed in ${formatDuration(
+        scenarioEnd - scenarioStart
+      )}.`
     )
   }
 
@@ -83,7 +92,7 @@ export class ExecutorPerVuIteration extends Executor {
   override scenarioProgress (state: ScenarioState): ScenarioProgress {
     const iterations = state.iterations.success + state.iterations.fail
     return {
-      percentage: iterations / this.totalIterations * 100,
+      percentage: (iterations / this.totalIterations) * 100,
       extraInfos: '',
       aborted: state.aborted
     }

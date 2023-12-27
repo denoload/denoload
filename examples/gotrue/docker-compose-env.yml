@@ -1,4 +1,4 @@
-version: '3'
+version: "3"
 services:
   gotrue:
     image: "docker.io/supabase/gotrue:v2.99.0"
@@ -53,4 +53,3 @@ services:
 
 networks:
   default: {}
-

@@ -9,10 +9,18 @@ export function parseDuration (str: string): number {
   const hours = str.match(/(\d+)\s*h/)
   const minutes = str.match(/(\d+)\s*m/)
   const seconds = str.match(/(\d+)\s*s/)
-  if (days !== null) { result += parseInt(days[1]) * 86400 }
-  if (hours !== null) { result += parseInt(hours[1]) * 3600 }
-  if (minutes !== null) { result += parseInt(minutes[1]) * 60 }
-  if (seconds !== null) { result += parseInt(seconds[1]) }
+  if (days !== null) {
+    result += parseInt(days[1]) * 86400
+  }
+  if (hours !== null) {
+    result += parseInt(hours[1]) * 3600
+  }
+  if (minutes !== null) {
+    result += parseInt(minutes[1]) * 60
+  }
+  if (seconds !== null) {
+    result += parseInt(seconds[1])
+  }
   return result
 }
 
@@ -37,7 +45,13 @@ export function printMetrics (m: metrics.RegistryObj): void {
 }
 
 function formatTrendTag (trend: number[]): string[] {
-  const { avg, min, max, percentiles: { 50: med, 90: p90, 95: p95, 99: p99 }, total } = metrics.trend(trend, [50, 90, 95, 99])
+  const {
+    avg,
+    min,
+    max,
+    percentiles: { 50: med, 90: p90, 95: p95, 99: p99 },
+    total
+  } = metrics.trend(trend, [50, 90, 95, 99])
   const avgStr = formatDuration(avg)
   const minStr = formatDuration(min)
   const maxStr = formatDuration(max)

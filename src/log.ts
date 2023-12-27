@@ -3,9 +3,12 @@ import Logger from 'bunyan'
 
 export { Logger }
 
-const level = process.env.NODE_ENV === 'production'
-  ? 'warn'
-  : process.env.DEBUG !== undefined ? 'debug' : 'info'
+const level =
+  process.env.NODE_ENV === 'production'
+    ? 'warn'
+    : process.env.DEBUG !== undefined
+      ? 'debug'
+      : 'info'
 
 export function getLogger (name: string): Logger {
   return bunyan.createLogger({

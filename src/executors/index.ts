@@ -13,8 +13,8 @@ const executors: {
     workerPool: WorkerPool,
     scenarioName: string,
     moduleURL: URL,
-    scenarioOptions: Partial<ScenarioOptions[key]>
-  ) => Executor
+    scenarioOptions: Partial<ScenarioOptions[key]>,
+  ) => Executor;
 } = {
   [ExecutorType.PerVuIteration]: ExecutorPerVuIteration,
   [ExecutorType.ConstantVus]: ExecutorConstantVus,

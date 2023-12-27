@@ -74,6 +74,31 @@ export class CounterMetric extends Metric {
   }
 }
 
+export class GaugeMetric extends Metric {
+  private readonly data: Record<string, number> = { _: 0 }
+  private min?: number
+  private max?: number
+
+  add (value: number, ...tags: string[]): void {
+    for (const tag of tags) {
+      if (this.data[tag] === undefined) {
+        this.data[tag] = 0
+      }
+
+      this.data[tag] += value
+    }
+
+    if ((this.min ?? Number.MAX_SAFE_INTEGER) > value) this.min = value
+    if ((this.max ?? Number.MIN_SAFE_INTEGER) < value) this.max = value
+
+    this.data._ += value
+  }
+
+  toJSON (): Record<string, number> {
+    return this.data
+  }
+}
+
 /**
  * RegistryObj define a Registry object after serialization.
  */
@@ -85,9 +110,11 @@ export interface RegistryObj {
 /**
  * Merge the given registries object into base registry object.
  */
-export function mergeRegistryObjects (...registries: RegistryObj[]): RegistryObj {
-  const trends: RegistryObj['trends'] = { }
-  const counters: RegistryObj['counters'] = { }
+export function mergeRegistryObjects (
+  ...registries: RegistryObj[]
+): RegistryObj {
+  const trends: RegistryObj['trends'] = {}
+  const counters: RegistryObj['counters'] = {}
 
   for (const registry of registries) {
     for (const name in registry.trends) {
