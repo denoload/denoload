@@ -8,7 +8,7 @@ test('RPC double()', async () => {
     { type: 'module' }
   )
 
-  const result = await worker.remoteProcedureCall<number, number>({
+  const result = await worker.remoteProcedureCall<[number], number>({
     name: 'double',
     args: [2]
   })
@@ -25,7 +25,7 @@ test('error is thrown from worker', async () => {
   )
 
   expect(
-    worker.remoteProcedureCall<undefined, number>({
+    worker.remoteProcedureCall<[], number>({
       name: 'error',
       args: []
     })
@@ -41,7 +41,7 @@ test('non existent procedure', async () => {
   )
 
   expect(
-    worker.remoteProcedureCall<undefined, number>({
+    worker.remoteProcedureCall<[], number>({
       name: 'non existent',
       args: []
     })
@@ -57,7 +57,7 @@ test("timeout error is thrown if worker doesn't respond", () => {
   )
 
   expect(
-    worker.remoteProcedureCall<number, number>(
+    worker.remoteProcedureCall<[ number ], number>(
       {
         name: 'sleep',
         args: [10000] // 10s

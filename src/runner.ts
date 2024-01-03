@@ -41,7 +41,7 @@ export async function run (moduleURL: URL): Promise<boolean> {
         workerPool,
         scenarioName,
         moduleURL,
-        scenarioOptions
+        scenarioOptions as unknown as any
       )
   )
 
@@ -113,7 +113,7 @@ async function collectAndMergeMetricsRegistry (
   workerPool: WorkerPool
 ): Promise<metrics.RegistryObj> {
   const metricsPromises = await workerPool.forEachWorkerRemoteProcedureCall<
-  never,
+  [],
   metrics.RegistryObj
   >({
     name: 'metrics',
@@ -123,8 +123,7 @@ async function collectAndMergeMetricsRegistry (
     logger.error('some metrics were lost, result may be innacurate')
   }
   const vuMetrics = metricsPromises.reduce<metrics.RegistryObj[]>((acc, p) => {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    if (p.status === 'fulfilled') acc.push(p.value!)
+    if (p.status === 'fulfilled') acc.push(p.value)
     return acc
   }, [])
 
@@ -135,7 +134,7 @@ async function collectAndMergeScenariosState (
   workerPool: WorkerPool
 ): Promise<Record<string, ScenarioState>> {
   const promises = await workerPool.forEachWorkerRemoteProcedureCall<
-  never,
+  [],
   Record<string, ScenarioState>
   >({
     name: 'scenariosState',

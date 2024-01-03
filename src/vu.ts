@@ -23,7 +23,6 @@ export class VU {
       }
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     return JSON.parse(this.jsonScenarioState()) as ScenarioState
   }
 

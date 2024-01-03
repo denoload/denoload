@@ -37,9 +37,9 @@ export class WorkerPool {
   }
 
   async remoteProcedureCall<A, R>(
-    rpc: { name: string, args: A[] },
+    rpc: { name: string, args: A },
     options?: Partial<RpcOptions>
-  ): Promise<R | undefined> {
+  ): Promise<R> {
     let worker = this.workers[0]
     let workerIndex = 0
 
@@ -90,9 +90,9 @@ export class WorkerPool {
   }
 
   async forEachWorkerRemoteProcedureCall<A, R>(
-    rpc: { name: string, args: A[] },
+    rpc: { name: string, args: A },
     options?: Partial<RpcOptions>
-  ): Promise<Array<PromiseSettledResult<Awaited<R> | undefined>>> {
+  ): Promise<Array<PromiseSettledResult<Awaited<R>>>> {
     const promises = []
     for (const w of this.workers) {
       promises.push(w.remoteProcedureCall<A, R>(rpc, options))

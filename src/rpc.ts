@@ -6,11 +6,15 @@ export interface RPC<A> {
   args: A[]
 }
 
-export interface RpcResult<R> {
-  id: number
-  result?: R
-  error?: string
-}
+export type RpcResult<R> =
+  | {
+    id: number
+    result: R
+  }
+  | {
+    id: number
+    error: string
+  }
 
 export interface RpcOptions {
   timeout: number
@@ -32,7 +36,7 @@ export class RpcWorker {
   private readonly worker: Worker
   private readonly responseHandlers = new Map<number, ResponseHandler<any>>()
 
-  constructor (specifier: string | URL, options?: Bun.WorkerOptions) {
+  constructor (specifier: string | URL, options?: WorkerOptions) {
     this.worker = new Worker(specifier, options)
     this.worker.onmessage = this.onResponse.bind(this)
     this.worker.onmessageerror = (ev) => {
@@ -61,9 +65,9 @@ export class RpcWorker {
   }
 
   async remoteProcedureCall<A, R>(
-    rpc: { name: string, args: A[] },
+    rpc: { name: string, args: A },
     options: Partial<RpcOptions> = {}
-  ): Promise<R | undefined> {
+  ): Promise<R> {
     const { timeout, transfer } = {
       ...defaultRpcOptions,
       ...options
@@ -86,6 +90,7 @@ export class RpcWorker {
 
         if ('error' in data) {
           reject(data.error)
+          return
         }
 
         resolve(data.result)
