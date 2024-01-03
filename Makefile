@@ -7,11 +7,9 @@ test: node_modules
 	bun test
 
 lint: node_modules
-	bunx prettier -c .
 	bunx eslint src/ packages/metrics
 
 lint/fix: node_modules
-	bunx prettier -w .
 	bunx eslint --fix src/ packages/metrics
 
 check: node_modules
