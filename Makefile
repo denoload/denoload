@@ -7,14 +7,13 @@ test: node_modules
 	bun test
 
 lint: node_modules
-	bunx eslint src/ packages/metrics
+	bunx eslint src/
 
 lint/fix: node_modules
-	bunx eslint --fix src/ packages/metrics
+	bunx eslint --fix src/ packages/
 
 check: node_modules
 	bunx tsc
-	cd packages/metrics; bunx tsc
 
 docker/build:
 	DOCKER_BUILDKIT=1 docker build . -t negrel/denoload:dev

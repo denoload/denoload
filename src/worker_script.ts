@@ -1,4 +1,4 @@
-import * as metrics from '@negrel/denoload-metrics'
+import * as metrics from './metrics'
 
 import * as log from './log.ts'
 import { workerProcedureHandler } from './rpc.ts'
@@ -37,9 +37,8 @@ self.onmessage = workerProcedureHandler(
       maxDurationMillis,
       gracefulStopMillis
     }: IterationsOptions): Promise<void> {
-      const vu = new VU(vuId, pollIntervalMillis)
       if (VUs[scenarioName] === undefined) VUs[scenarioName] = []
-      VUs[scenarioName].push(vu)
+      const vu = VUs[scenarioName][vuId] ?? new VU(vuId, pollIntervalMillis)
 
       await vu.doIterations(
         moduleURL,

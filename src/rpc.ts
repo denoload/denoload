@@ -18,7 +18,7 @@ export type RpcResult<R> =
 
 export interface RpcOptions {
   timeout: number
-  transfer: Transferable[]
+  transfer: Bun.Transferable[]
 }
 
 const defaultRpcOptions: RpcOptions = {
@@ -36,7 +36,7 @@ export class RpcWorker {
   private readonly worker: Worker
   private readonly responseHandlers = new Map<number, ResponseHandler<any>>()
 
-  constructor (specifier: string | URL, options?: WorkerOptions) {
+  constructor (specifier: string | URL, options?: Bun.WorkerOptions) {
     this.worker = new Worker(specifier, options)
     this.worker.onmessage = this.onResponse.bind(this)
     this.worker.onmessageerror = (ev) => {
@@ -115,7 +115,7 @@ export function workerProcedureHandler (
   // deno-lint-ignore no-explicit-any
   procedures: Record<string, (...args: any[]) => any>,
   // deno-lint-ignore no-explicit-any
-  postMessage: (message: any, transfer: Transferable[]) => void
+  postMessage: (message: any, transfer: Bun.Transferable[]) => void
   // deno-lint-ignore no-explicit-any
 ): (_: MessageEvent<RPC<any>>) => Promise<void> {
   const logger = log.getLogger('worker')
@@ -142,6 +142,7 @@ export function workerProcedureHandler (
           id: event.data.id,
           result
         },
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
         [result]
       )
     } catch (err) {

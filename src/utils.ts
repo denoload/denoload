@@ -1,4 +1,4 @@
-import * as metrics from '@negrel/denoload-metrics'
+import * as metrics from './metrics'
 
 /**
  * Parse a duration string with unit and returns the number of second.

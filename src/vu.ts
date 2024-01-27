@@ -1,4 +1,4 @@
-import type * as metrics from '@negrel/denoload-metrics'
+import type * as metrics from './metrics'
 import { type ScenarioState } from './scenario_state'
 
 export class VU {

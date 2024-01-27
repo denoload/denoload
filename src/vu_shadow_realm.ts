@@ -2,7 +2,7 @@
 // promises in exported function.
 /* eslint-disable @typescript-eslint/no-floating-promises */
 
-import { globalRegistry } from '@negrel/denoload-metrics'
+import { globalRegistry } from '../src/metrics'
 import { type ScenarioState } from './scenario_state'
 import fetchCookie from 'fetch-cookie'
 

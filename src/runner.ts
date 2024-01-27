@@ -6,7 +6,7 @@ import executors, {
   type ExecutorType
 } from './executors/index.ts'
 import log from './log.ts'
-import * as metrics from '@negrel/denoload-metrics'
+import * as metrics from './metrics'
 import { formatTab, padLeft, printMetrics } from './utils.ts'
 import { WorkerPool } from './worker_pool.ts'
 import { type ScenarioState, mergeScenarioState } from './scenario_state.ts'
@@ -41,6 +41,7 @@ export async function run (moduleURL: URL): Promise<boolean> {
         workerPool,
         scenarioName,
         moduleURL,
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
         scenarioOptions as unknown as any
       )
   )
