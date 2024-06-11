@@ -147,7 +147,7 @@ export function workerProcedureHandler (
       )
     } catch (err) {
       const errStr = (err as any)?.stack ?? (err as any).toString()
-      logger.error(`rpc ${event.data.id} error: ${errStr}`)
+      logger.error(`rpc ${event.data.id} error: ${errStr as string}`)
 
       postMessage(
         {

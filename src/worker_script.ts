@@ -2,7 +2,7 @@ import * as metrics from './metrics'
 
 import * as log from './log.ts'
 import { workerProcedureHandler } from './rpc.ts'
-import { VU } from './vu.ts'
+import { VU } from './vu/index.ts'
 import { type ScenarioState, mergeScenarioState } from './scenario_state.ts'
 
 export interface IterationsOptions {

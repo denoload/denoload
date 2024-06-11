@@ -1,0 +1,15 @@
+{
+  "name": "helloworld",
+  "module": "index.ts",
+  "type": "module",
+  "dependencies": {
+    "@negrel/denoload-metrics": "file://../../packages/metrics",
+    "expect": "^29.7.0"
+  },
+  "devDependencies": {
+    "bun-types": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  }
+}
