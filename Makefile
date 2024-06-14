@@ -1,27 +1,21 @@
-export MAKEFLAGS += --always-make
+.PHONY: lint
+lint:
+	deno lint
 
-node_modules:
-	if [ ! -d node_modules ]; then bun install --dev; fi
+.PHONY: fmt
+fmt:
+	deno fmt
 
-test: node_modules
-	bun test
+.PHONY: fmt-check
+fmt-check:
+	deno fmt --check
 
-lint: node_modules
-	bunx eslint src/
+.PHONY: test
+test: lint fmt
+	deno test --allow-read --allow-net
 
-lint/fix: node_modules
-	bunx eslint --fix src/ packages/
-
-check: node_modules
-	bunx tsc
-
-docker/build:
-	DOCKER_BUILDKIT=1 docker build . -t negrel/denoload:dev
-	if [ "$${IMAGE_TAR:-/dev/null}" != '/dev/null' ]; then \
-		docker save -o "$$IMAGE_TAR" negrel/denoload:dev; \
-	fi
-
-tag/%:
-	echo "export const VERSION = '$*'" > src/version.ts
-	git commit -m "version $*" src/version.ts
-	git tag $*
+.PHONY: tag
+tag/%: test
+	jq '.version = "$(@F)"' deno.json | sponge deno.json
+	git commit -m "tag version $(@F)" .; \
+	git tag $(@F)

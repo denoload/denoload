@@ -8,12 +8,11 @@
     flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs = import nixpkgs { inherit system; };
-        lib = pkgs.lib;
       in
       {
         devShells = {
           default = pkgs.mkShell {
-            buildInputs = with pkgs; [ bun k6 bunyan-rs ];
+            buildInputs = with pkgs; [ k6 deno ];
           };
         };
         packages = { };
