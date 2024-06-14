@@ -1,5 +1,8 @@
 import { Kv, KvEntry } from "@/private/services/kv/kv.ts";
 
+/**
+ * provideInMem define a provider for in memory based Kv implementation.
+ */
 export function provideInMem(): Kv {
   return new InMem();
 }

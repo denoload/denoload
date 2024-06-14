@@ -7,6 +7,9 @@ import { Teardown } from "@/private/services/teardown/mod.ts";
 export * from "@/private/services/kv/kv.ts";
 export * from "@/private/services/kv/config.ts";
 
+/**
+ * provideKv define a provider a Kv.
+ */
 export function provideKv(config: KvConfig, teardown: Teardown): Kv {
   switch (config.impl) {
     case "memory":

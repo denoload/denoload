@@ -1,8 +1,14 @@
+/**
+ * KvConfig define {@link Kv} configuration.
+ */
 export type KvConfig = {
   impl: "http";
   port?: number;
 } | { impl: "memory" };
 
+/**
+ * provideKvConfig is a provider for KvConfig.
+ */
 export function provideKvConfig(): KvConfig {
   const impl = Deno.env.get("DENOLOAD_KV_IMPL") ?? "http";
   if (impl === "http") {
