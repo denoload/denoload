@@ -1,6 +1,7 @@
 import { assert, assertEquals, assertStringIncludes } from "@std/assert";
 import { provideSandbox } from "@/private/services/sandbox/mod.ts";
 import { provideRpcClient } from "@/private/services/rpcclient/mod.ts";
+import { provideTeardown } from "@/private/services/teardown/mod.ts";
 
 Deno.test("sandboxed script tries to write a file", async () => {
   const moduleUrl = new URL(
@@ -8,7 +9,8 @@ Deno.test("sandboxed script tries to write a file", async () => {
     import.meta.url,
   ).toString();
 
-  const client = provideRpcClient({ impl: "workerpool" });
+  const teardown = provideTeardown();
+  const client = provideRpcClient({ impl: "workerpool" }, teardown);
   const sandbox = provideSandbox({
     timeout: 10_000,
     workerOptions: {
@@ -26,6 +28,8 @@ Deno.test("sandboxed script tries to write a file", async () => {
       () => assert(false, "untrusted code didn't throw"),
       (err) => assertStringIncludes(err.toString(), "Requires write access to"),
     );
+
+  await teardown.teardown();
 });
 
 Deno.test("sandbox list exports", async () => {
@@ -34,7 +38,8 @@ Deno.test("sandbox list exports", async () => {
     import.meta.url,
   ).toString();
 
-  const client = provideRpcClient({ impl: "workerpool" });
+  const teardown = provideTeardown();
+  const client = provideRpcClient({ impl: "workerpool" }, teardown);
   const sandbox = provideSandbox({
     timeout: 10_000,
     workerOptions: {
@@ -59,6 +64,8 @@ Deno.test("sandbox list exports", async () => {
     },
     foo: 'function foo() {\n  return "bar";\n}',
   });
+
+  await teardown.teardown();
 });
 
 Deno.test("sandbox list exports timeout", async () => {
@@ -67,7 +74,8 @@ Deno.test("sandbox list exports timeout", async () => {
     import.meta.url,
   ).toString();
 
-  const client = provideRpcClient({ impl: "workerpool" });
+  const teardown = provideTeardown();
+  const client = provideRpcClient({ impl: "workerpool" }, teardown);
   const sandbox = provideSandbox({
     timeout: 500,
     workerOptions: {
@@ -85,4 +93,6 @@ Deno.test("sandbox list exports timeout", async () => {
       () => assert(false, "sandbox didn't timed out"),
       (err) => assertStringIncludes(err.toString(), "timed out"),
     );
+
+  await teardown.teardown();
 });
