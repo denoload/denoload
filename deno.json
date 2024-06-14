@@ -1,0 +1,15 @@
+{
+  "tasks": {
+    "dev": "deno run --watch main.ts"
+  },
+  "unstable": [
+    "worker-options"
+  ],
+  "imports": {
+    "@/": "./",
+    "@negrel/rpc": "jsr:@negrel/rpc@^0.3.0",
+    "@negrel/workerpool": "jsr:@negrel/workerpool@^0.5.0",
+    "@std/assert": "jsr:@std/assert@^0.226.0",
+    "@std/cli": "jsr:@std/cli@^0.224.6"
+  }
+}
